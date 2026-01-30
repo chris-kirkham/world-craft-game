@@ -53,7 +53,8 @@ public class CameraMovement : MonoBehaviour, ICursorEventListener
     {
         if(isDragging)
         {
-            cam.transform.position += cam.transform.TransformDirection((Vector3)(mouseDelta * moveSpeed));
+            //cam.transform.position += cam.transform.TransformDirection((Vector3)(mouseDelta * moveSpeed));
+            cam.transform.position += new Vector3(mouseDelta.x, 0f, mouseDelta.y) * moveSpeed;
         }
 
         ClampCameraPos();

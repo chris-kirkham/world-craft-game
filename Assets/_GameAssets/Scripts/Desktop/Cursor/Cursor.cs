@@ -288,14 +288,14 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
         if(!trackedListeners.Contains(listener))
         {
             trackedListeners.Add(listener);
-            Debug.Log($"Adding cursor event listener {listener.ToString()};" +
-                $" tracked listener listener count: {trackedListeners.Count}");
+            //Debug.Log($"Adding cursor event listener {listener.ToString()};" +
+            //    $" tracked listener listener count: {trackedListeners.Count}");
         }
     }
 
     public void RemoveCursorEventListener(ICursorEventListener listener)
     {
-        Debug.Log($"Removing cursor event listener {listener.ToString()}; new listener count: {trackedListeners.Count - 1}");
+        //Debug.Log($"Removing cursor event listener {listener.ToString()}; new listener count: {trackedListeners.Count - 1}");
         trackedListeners.Remove(listener);
     }
 

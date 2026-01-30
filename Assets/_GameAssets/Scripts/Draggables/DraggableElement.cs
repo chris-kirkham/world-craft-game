@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -9,7 +10,10 @@ public abstract class DraggableElement : MonoBehaviour, ICursorEventListener
 
     protected virtual Sprite OnHoverDragSprite { get; set; }
 
-    protected Cursor.SpriteOverride cursorSpriteOverride; 
+    protected Cursor.SpriteOverride cursorSpriteOverride;
+
+    public event Action DragStarted;
+    public event Action DragEnded;
 
     protected virtual void Start()
     {
@@ -55,12 +59,15 @@ public abstract class DraggableElement : MonoBehaviour, ICursorEventListener
         isDragging = true;
         Cursor.Inst.CurrentDragTarget = this;
         OnStartDrag();
+        DragStarted?.Invoke();
     }
 
     private void EndDrag()
     {
         isDragging = false;
         OnEndDrag();
+        DragEnded?.Invoke();
+
         if (!isHovered)
         {
             Cursor.Inst.RemoveSpriteOverride(cursorSpriteOverride);

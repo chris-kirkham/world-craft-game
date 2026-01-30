@@ -11,6 +11,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     [SerializeField] private Rigidbody rb;
     [SerializeField] private Collider coll;
     [SerializeField] private float onCraftedCollisionEnableDelay = 0.5f;
+    [SerializeField] private DraggableElement dragHandler;
 
     [Header("UI")]
     [SerializeField] private RectTransform canvasRect;
@@ -23,12 +24,16 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     [SerializeField] private GameObject onCraftedVFX;
     [SerializeField] private GameObject craftingPotentialVFX;
 
+
     private bool acceptInput = true;
     private bool isHovered;
-
+    
+    public HashSet<CraftingItem> TouchingItems => touchingItems;
     private HashSet<CraftingItem> touchingItems;
 
-    public HashSet<CraftingItem> TouchingItems => touchingItems;
+    public bool CanBeUsedInCraft => canBeUsedInCraft;
+    private bool canBeUsedInCraft = true;
+
 
     public CraftingItemData Data 
     {
@@ -47,6 +52,11 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
 
     private void OnEnable()
     {
+        if(Crafter.InstExists())
+        {
+            Crafter.Inst.RegisterCraftingItem(this);
+        }
+
         SetAcceptInput(true);
         UpdateData();
 
@@ -57,6 +67,11 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         {
             //TODO: check for crafting potential on enable?
             craftingPotentialVFX.SetActive(false);
+        }
+
+        if (dragHandler)
+        {
+            dragHandler.DragStarted += OnDragStart;
         }
     }
 
@@ -82,6 +97,16 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         {
             Debug.LogError($"Instance of {nameof(Cursor)} not found!");
         }
+
+        if(Crafter.InstExists())
+        {
+            Crafter.Inst.OnItemDisabledOrDestroyed(this);
+        }
+
+        if (dragHandler)
+        {
+            dragHandler.DragStarted -= OnDragStart;
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -89,7 +114,6 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         var otherItem = other.GetComponentInParent<CraftingItem>();
         if(otherItem && !touchingItems.Contains(otherItem))
         {
-            touchingItems.Add(otherItem);
             OnNewItemContact(otherItem);
         }
     }
@@ -99,7 +123,6 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         var otherItem = other.gameObject.GetComponentInParent<CraftingItem>();
         if (otherItem && touchingItems.Contains(otherItem))
         {
-            touchingItems.Remove(otherItem);
             OnLostItemContact(otherItem);
         }
     }
@@ -107,11 +130,19 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     private void OnNewItemContact(CraftingItem item)
     {
         Crafter.Inst.AddItemContact(this, item);
+
+        touchingItems.Add(item);
     }
 
     private void OnLostItemContact(CraftingItem item)
     {
         Crafter.Inst.RemoveItemContact(this, item);
+
+        touchingItems.Remove(item);
+        if(touchingItems.Count == 0)
+        {
+            SetPartialCraftVFX(false);
+        }
     }
 
     private void UpdateData()
@@ -199,6 +230,11 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         }
     }
 
+    public void SetCanBeUsedInCraft(bool enabled)
+    {
+        canBeUsedInCraft = enabled;
+    }
+
     public void OnCursorEvent(Cursor.CursorEvent e)
     {
         if(!acceptInput)
@@ -206,7 +242,6 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
             return;
         }
         
-        //combine items by dragging them together. TODO: THIS IS ALL PROTOTYPE AND WILL NEED REFACTORING!
         if(e == Cursor.CursorEvent.EnterElement)
         {
             isHovered = true;
@@ -215,50 +250,12 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         {
             isHovered = false;
         }
+    }
 
-        /*
-        //TODO: refactor
-        if (isHovered && e == Cursor.CursorEvent.LeftClickUp)
-        {
-            var dragTarget = Cursor.Inst.CurrentDragTarget;
-            if (dragTarget)
-            {
-                var draggedItem = dragTarget.GetComponentInParent<CraftingItem>(); //TODO: parent/child/only on GameObject itself?
-                if (draggedItem)
-                {
-                    //TODO: make a singleton CraftingManager if doing this kind of crafting
-                    var crafter = FindFirstObjectByType<Crafter>();
-                    if (crafter)
-                    {
-                        //get hovered items
-                        var hoveredListeners = Cursor.Inst.HoveredListeners;
-                        var hoveredCraftItems = new List<CraftingItem>(hoveredListeners.Count);
-                        foreach(var listener in hoveredListeners)
-                        {
-                            if(listener is CraftingItem)
-                            {
-                                hoveredCraftItems.Add((CraftingItem)listener);
-                            }
-                        }
-
-                        crafter.TryCraft(hoveredCraftItems); 
-                        //crafter.TryCraft(new List<CraftingItem>() { this, draggedItem }); 
-                    }
-                    else
-                    {
-                        Debug.LogError($"No {nameof(Crafter)} found in scene!");
-                    }
-                }
-            }
-        }
-        */
-
-        /*
-        if(Cursor.Inst.IsCursorOverElement(this) && e == Cursor.CursorEvent.LeftClickDown)
-        {
-            OpenItem();
-        }
-        */
+    private void OnDragStart()
+    {
+        //TODO: other stuff to do here?
+        SetPartialCraftVFX(false);
     }
 
     //called when this item is first crafted
@@ -283,10 +280,10 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     //TODO: prototype/placeholder
     private void OnCraftedPush()
     {
-        var pushForce = Random.insideUnitCircle * 10f;
-        rb.AddForce(new Vector3(pushForce.x, 0f, pushForce.y), ForceMode.VelocityChange);
-        var pushTorque = new Vector3(0f, 0f, Random.Range(-15f, 15f));
-        rb.AddTorque(pushTorque, ForceMode.VelocityChange);
+        var pushForce = Random.insideUnitCircle;
+        rb.AddForce(new Vector3(pushForce.x, 1f, pushForce.y), ForceMode.Acceleration);
+        var pushTorque = new Vector3(0f, Random.Range(-15f, 15f), 0f);
+        rb.AddTorque(pushTorque, ForceMode.Acceleration);
     }
 
     public void OnCraftAttempt(Crafter.CraftingResultState resultState)
@@ -313,7 +310,8 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     private void OnSuccessfulCraft()
     {
         SetCollisionEnabled(false);
-        StartCoroutine(OnSuccessfulCraftAnim());
+        Destroy(gameObject);
+        //StartCoroutine(OnSuccessfulCraftAnim());
     }
 
     private IEnumerator OnSuccessfulCraftAnim()
@@ -342,5 +340,11 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     {
         yield return new WaitForSeconds(delay);
         SetCollisionEnabled(enabled);
+    }
+
+    public void TogglePhysics(bool enabled)
+    {
+        rb.isKinematic = enabled;
+        coll.enabled = !enabled;
     }
 }

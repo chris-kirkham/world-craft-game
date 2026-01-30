@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -9,9 +10,10 @@ public class CraftingItemDatabase : ScriptableObject
     [SerializeField] private List<CraftingItemData> itemList; 
 
     //TODO: PROTOTYPE, optimise!!!!
-    public Crafter.CraftingResultState TryGetCraftResult(HashSet<CraftingItem> ingredients, out CraftingItemData result)
+    public Crafter.CraftingResultState GetCraftResult(HashSet<CraftingItem> ingredients, out CraftingItemData result)
     {
         result = null;
+        var resultState = Crafter.CraftingResultState.NoIngredientMatch;
 
         if (ingredients.Count < 2)
         {
@@ -19,105 +21,54 @@ public class CraftingItemDatabase : ScriptableObject
             return Crafter.CraftingResultState.NoIngredientMatch;
         }
 
-        //TODO: OPTIMISE!!!!!!!!
         foreach (var item in itemList)
         {
+            //exit if item isn't craftable by two or more other items
             if (item.Prerequisites.Count < 2)
             {
                 continue;
             }
 
+            //check number of matching ingredients we have to this item
             int numMatching = 0;
+            var unusedIngredients = new List<CraftingItem>(ingredients); //TODO: ALLOCATION
             foreach (var prereqData in item.Prerequisites)
             {
-                foreach (var ingredient in ingredients)
+                for(int i = unusedIngredients.Count -1; i >= 0; i--)
                 {
-                    if (ingredient.Data == prereqData)
+                    if (unusedIngredients[i].Data == prereqData)
                     {
                         numMatching++;
+                        //Debug.Log($"Checked {prereqData.ItemName} against {unusedIngredients[i].Data}, num matching: {numMatching}");
+                        unusedIngredients.RemoveAt(i);
+                        break; //avoids matching two of the same ingredient to one of the same prerequisite
                     }
                 }
             }
 
-            if(numMatching == item.Prerequisites.Count)
+            if (numMatching == item.Prerequisites.Count) //if we have the same number of matches as prerequisites...
             {
-                result = item;
-                return Crafter.CraftingResultState.SuccessfulCraft;
+                //if we have -more- ingredients than prerequisites, count it as a partial craft
+                //(so we can display the partial-craft VFX and player might guess they need to remove an item)
+                //TODO: think about this! Should this case count as a partial craft or not? It would confuse players
+                //if they think a partial craft always has -fewer- ingredients than required
+                if (ingredients.Count > item.Prerequisites.Count)
+                {
+                    resultState = Crafter.CraftingResultState.PartialIngredientMatch;
+                }
+                else //successful craft
+                {
+                    result = item;
+                    return Crafter.CraftingResultState.SuccessfulCraft;
+                }
             }
 
             if (numMatching > 1)
             {
-                return Crafter.CraftingResultState.PartialIngredientMatch;
+                resultState = Crafter.CraftingResultState.PartialIngredientMatch;
             }
         }
 
-        return Crafter.CraftingResultState.NoIngredientMatch;
-    }
-
-    private bool DoIngredientsMatchResult(CraftingItemData result, List<CraftingItemData> ingredients)
-    {
-        var prerequisites = result.Prerequisites;
-
-        //if item has no prerequisites, ignore it when crafting
-        if (prerequisites == null || prerequisites.Count == 0)
-        {
-            return false;
-        }
-
-        //if ingredients and prerequisites are different in number, this can't be the right item 
-        //(items must have exactly the right ingredients to craft)
-        if (prerequisites.Count != ingredients.Count)
-        {
-            return false;
-        }
-
-        //check the current ingredients are exactly the same as the prerequisites for this item
-        foreach (var prerequisite in prerequisites)
-        {
-            if (!ingredients.Contains(prerequisite))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    //TODO: Optimise!!!! Integrate with other function? This whole crafting-dictionary thing should use something other than lists
-    public bool TryFindPartialIngredientMatch(HashSet<CraftingItem> ingredients)
-    {
-        if(ingredients.Count < 2)
-        {
-            return false;
-        }
-
-        //TODO: OPTIMISE!!!!!!!!
-        foreach(var item in itemList)
-        {
-            if(item.Prerequisites.Count < 2)
-            {
-                continue;
-            }
-
-            int numMatching = 0;
-            foreach(var prereqData in item.Prerequisites)
-            {
-                foreach(var ingredient in ingredients)
-                {
-                    if(ingredient.Data == prereqData)
-                    {
-                        numMatching++;
-                    }
-                }
-            }
-
-            //N.B. if we're checking for full matches anyhow this should be integrated into the other matching function
-            if(numMatching > 1 && numMatching < item.Prerequisites.Count)
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return resultState;
     }
 }

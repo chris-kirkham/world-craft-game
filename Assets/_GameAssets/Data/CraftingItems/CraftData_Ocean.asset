@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64da08f90a4e74a41ae61ff1dccf769c, type: 3}
   m_Name: CraftData_Ocean
   m_EditorClassIdentifier: 
-  itemName: Water
+  itemName: Ocean
   thumbnailTex: {fileID: 0}
   contentPrefab: {fileID: 0}
   prerequisites:

@@ -154,7 +154,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &7673049695543603661
 RectTransform:
   m_ObjectHideFlags: 0
@@ -568,6 +568,7 @@ MonoBehaviour:
   rb: {fileID: 437282539546797569}
   coll: {fileID: 1203404101967869221}
   onCraftedCollisionEnableDelay: 0.25
+  dragHandler: {fileID: 7617850723740706044}
   canvasRect: {fileID: 0}
   thumbnailImage: {fileID: 2057460480368453330}
   itemSize: {x: 192, y: 256}

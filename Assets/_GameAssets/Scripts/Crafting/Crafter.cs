@@ -428,6 +428,7 @@ public class Crafter : SingletonMonoBehaviour<Crafter>, ICursorEventListener
         //which is currently 3 I think but could go up! So find a way to track this or just don't)
         //and check them against crafting recipes
 
+        //google power set
 
 
         return false;

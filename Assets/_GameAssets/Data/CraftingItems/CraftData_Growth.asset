@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: CraftData_Growth
   m_EditorClassIdentifier: 
   itemName: Growth
-  thumbnailTex: {fileID: 0}
+  thumbnailTex: {fileID: 2800000, guid: 9bd3b1b6cca48b94ca30a781a17f5ec9, type: 3}
   contentPrefab: {fileID: 0}
   prerequisites:
   - {fileID: 11400000, guid: 33fbd6f9fc3345f4c842fd6e648b25e7, type: 2}

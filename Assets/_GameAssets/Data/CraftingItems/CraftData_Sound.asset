@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64da08f90a4e74a41ae61ff1dccf769c, type: 3}
+  m_Name: CraftData_Sound
+  m_EditorClassIdentifier: 
+  itemName: Sound
+  thumbnailTex: {fileID: 0}
+  contentPrefab: {fileID: 0}
+  prerequisites:
+  - {fileID: 11400000, guid: a5ecc6b4dca2d814fb3b56f35b0be370, type: 2}
+  - {fileID: 11400000, guid: c1403b9372aa9db4398fb8d2a46111b6, type: 2}
+  products: []

@@ -6,7 +6,7 @@ public class CraftingDebugDisplay : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI debugText;
 
-    public void SetDebugInfo(HashSet<Crafter.ItemContactsGroup> itemContacts)
+    public void SetDebugInfo(HashSet<CraftingManager.ItemContactsGroup> itemContacts)
     {
         if(!debugText)
         {

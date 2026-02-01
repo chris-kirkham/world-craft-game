@@ -16,6 +16,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     [Header("UI")]
     [SerializeField] private RectTransform canvasRect;
     [SerializeField] private RawImage thumbnailImage;
+    [SerializeField] private Renderer image;
     [SerializeField] private Vector2Int itemSize = new Vector2Int(100, 100);
     [SerializeField] private RectTransform imageArea;
     [SerializeField] private TextMeshProUGUI debugImageText; //debug text for when image is missing
@@ -24,7 +25,8 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     [SerializeField] private GameObject onCraftedVFX;
     [SerializeField] private GameObject craftingPotentialVFX;
 
-
+    private Material imageMat;
+    
     private bool acceptInput = true;
     private bool isHovered;
     
@@ -52,9 +54,9 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
 
     private void OnEnable()
     {
-        if(Crafter.InstExists())
+        if(CraftingManager.InstExists())
         {
-            Crafter.Inst.RegisterCraftingItem(this);
+            CraftingManager.Inst.RegisterCraftingItem(this);
         }
 
         SetAcceptInput(true);
@@ -98,9 +100,9 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
             Debug.LogError($"Instance of {nameof(Cursor)} not found!");
         }
 
-        if(Crafter.InstExists())
+        if(CraftingManager.InstExists())
         {
-            Crafter.Inst.OnItemDisabledOrDestroyed(this);
+            CraftingManager.Inst.OnItemDisabledOrDestroyed(this);
         }
 
         if (dragHandler)
@@ -129,14 +131,14 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
 
     private void OnNewItemContact(CraftingItem item)
     {
-        Crafter.Inst.AddItemContact(this, item);
+        CraftingManager.Inst.AddItemContact(this, item);
 
         touchingItems.Add(item);
     }
 
     private void OnLostItemContact(CraftingItem item)
     {
-        Crafter.Inst.RemoveItemContact(this, item);
+        CraftingManager.Inst.RemoveItemContact(this, item);
 
         touchingItems.Remove(item);
         if(touchingItems.Count == 0)
@@ -162,10 +164,18 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     
         gameObject.name = "Item_" + itemData.ItemName;
 
-        if(itemData.ThumbnailTex)
+        if(image && itemData.ThumbnailTex && Application.isPlaying) //don't get material instance + default to text if not playing
         {
-            thumbnailImage.gameObject.SetActive(true);
-            thumbnailImage.texture = itemData.ThumbnailTex;
+            imageMat = image.material;
+            if (imageMat)
+            {
+                imageMat.mainTexture = itemData.ThumbnailTex;
+                image.gameObject.SetActive(true);
+                thumbnailImage.gameObject.SetActive(false);
+            }
+
+            //thumbnailImage.gameObject.SetActive(true);
+            //thumbnailImage.texture = itemData.ThumbnailTex;
             if(debugImageText)
             {
                 debugImageText.gameObject.SetActive(false);
@@ -175,6 +185,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         {
             debugImageText.text = itemData.ItemName;
             debugImageText.gameObject.SetActive(true);
+            image.gameObject.SetActive(false);
             thumbnailImage.gameObject.SetActive(false);
         }
 
@@ -286,13 +297,13 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         rb.AddTorque(pushTorque, ForceMode.Acceleration);
     }
 
-    public void OnCraftAttempt(Crafter.CraftingResultState resultState)
+    public void OnCraftAttempt(CraftingManager.CraftingResultState resultState)
     {
-        if(resultState == Crafter.CraftingResultState.SuccessfulCraft)
+        if(resultState == CraftingManager.CraftingResultState.SuccessfulCraft)
         {
             OnSuccessfulCraft();
         }
-        else if(resultState == Crafter.CraftingResultState.PartialIngredientMatch)
+        else if(resultState == CraftingManager.CraftingResultState.PartialIngredientMatch)
         {
             SetPartialCraftVFX(true);
         }

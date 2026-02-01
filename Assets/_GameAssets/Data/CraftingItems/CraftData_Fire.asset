@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: CraftData_Fire
   m_EditorClassIdentifier: 
   itemName: Fire
-  thumbnailTex: {fileID: 0}
+  thumbnailTex: {fileID: 2800000, guid: b37e0709c6c95c54a9f04bf7f24554b8, type: 3}
   contentPrefab: {fileID: 0}
   prerequisites: []
-  products: []
+  products:
+  - {fileID: 11400000, guid: c6ddf3c03eeddc8448ae41fef5ff0bf0, type: 2}

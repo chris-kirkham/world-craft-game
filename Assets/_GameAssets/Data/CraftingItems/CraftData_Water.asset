@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: CraftData_Water
   m_EditorClassIdentifier: 
   itemName: Water
-  thumbnailTex: {fileID: 0}
+  thumbnailTex: {fileID: 2800000, guid: 3f1d10b91092eab4087e41ff6a106993, type: 3}
   contentPrefab: {fileID: 0}
   prerequisites: []
   products: []

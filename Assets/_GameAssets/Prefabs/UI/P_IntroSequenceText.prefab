@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5969222492977633584}
   - component: {fileID: 1007614292472402940}
   - component: {fileID: 2332552631947658464}
-  - component: {fileID: 8399871894613969126}
+  - component: {fileID: 5309277957613198270}
   m_Layer: 0
   m_Name: P_IntroSequenceText
   m_TagString: Untagged
@@ -76,7 +76,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 2717908991
+    rgba: 4294967295
   m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -187,20 +187,42 @@ MonoBehaviour:
   positionSeed: 0
   rotationSeed: 0
   setRandomSeedsOnEnable: 1
---- !u!111 &8399871894613969126
-Animation:
+--- !u!114 &5309277957613198270
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8441693127499205813}
   m_Enabled: 1
-  serializedVersion: 4
-  m_Animation: {fileID: 7400000, guid: f743df39d4c79944f8925a1dec79306d, type: 2}
-  m_Animations:
-  - {fileID: 7400000, guid: f743df39d4c79944f8925a1dec79306d, type: 2}
-  m_WrapMode: 0
-  m_PlayAutomatically: 1
-  m_AnimatePhysics: 0
-  m_UpdateMode: 0
-  m_CullingType: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c0212fba7969294c8babd87ab134a8f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  text: {fileID: 1007614292472402940}
+  fadeInTime: 1
+  fadeOutTime: 0.5
+  fadeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4

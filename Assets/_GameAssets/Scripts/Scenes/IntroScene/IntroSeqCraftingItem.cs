@@ -4,7 +4,7 @@ public class IntroSeqCraftingItem : MonoBehaviour, ICursorEventListener
 {
     [SerializeField] private CraftingItem item;
     [SerializeField] private IntroSequence introSequence;
-    [SerializeField] private GameObject onHoverText;
+    [SerializeField] private FadeInOutText onHoverText;
 
     private bool isHovered;
 
@@ -12,7 +12,7 @@ public class IntroSeqCraftingItem : MonoBehaviour, ICursorEventListener
     {
         if(onHoverText)
         {
-            onHoverText.SetActive(false);
+            onHoverText.gameObject.SetActive(false);
         }
     }
 
@@ -42,13 +42,13 @@ public class IntroSeqCraftingItem : MonoBehaviour, ICursorEventListener
         if(e == Cursor.CursorEvent.EnterElement)
         {
             isHovered = true;
-            onHoverText.SetActive(true);
+            onHoverText.EnableAndPlayInClip();
         }
 
         if (e == Cursor.CursorEvent.ExitElement)
         {
             isHovered = false;
-            onHoverText.SetActive(false);
+            onHoverText.PlayClipThenDisable();
         }
 
         if(e == Cursor.CursorEvent.LeftClickDown && isHovered)

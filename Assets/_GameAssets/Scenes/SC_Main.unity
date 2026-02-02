@@ -859,38 +859,6 @@ PrefabInstance:
       propertyPath: debugDisplay
       value: 
       objectReference: {fileID: 3065637050409334969}
-    - target: {fileID: -559291666634834028, guid: ddf03641f2caa114abc195c67ef5abcd, type: 3}
-      propertyPath: randomProducts.Array.size
-      value: 6
-      objectReference: {fileID: 0}
-    - target: {fileID: -559291666634834028, guid: ddf03641f2caa114abc195c67ef5abcd, type: 3}
-      propertyPath: 'randomProducts.Array.data[0]'
-      value: 
-      objectReference: {fileID: 11400000, guid: 299c2723918579e43af015a05132e2e1, type: 2}
-    - target: {fileID: -559291666634834028, guid: ddf03641f2caa114abc195c67ef5abcd, type: 3}
-      propertyPath: 'randomProducts.Array.data[1]'
-      value: 
-      objectReference: {fileID: 11400000, guid: a5ecc6b4dca2d814fb3b56f35b0be370, type: 2}
-    - target: {fileID: -559291666634834028, guid: ddf03641f2caa114abc195c67ef5abcd, type: 3}
-      propertyPath: 'randomProducts.Array.data[2]'
-      value: 
-      objectReference: {fileID: 11400000, guid: 33fbd6f9fc3345f4c842fd6e648b25e7, type: 2}
-    - target: {fileID: -559291666634834028, guid: ddf03641f2caa114abc195c67ef5abcd, type: 3}
-      propertyPath: 'randomProducts.Array.data[3]'
-      value: 
-      objectReference: {fileID: 11400000, guid: c03eaadaeb521804ba15be4202e99e2a, type: 2}
-    - target: {fileID: -559291666634834028, guid: ddf03641f2caa114abc195c67ef5abcd, type: 3}
-      propertyPath: 'randomProducts.Array.data[4]'
-      value: 
-      objectReference: {fileID: 11400000, guid: c1403b9372aa9db4398fb8d2a46111b6, type: 2}
-    - target: {fileID: -559291666634834028, guid: ddf03641f2caa114abc195c67ef5abcd, type: 3}
-      propertyPath: 'randomProducts.Array.data[5]'
-      value: 
-      objectReference: {fileID: 11400000, guid: 447e815deba235b44b2604f425d83cd7, type: 2}
-    - target: {fileID: 1112798358685904774, guid: ddf03641f2caa114abc195c67ef5abcd, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 1882925333605516054, guid: ddf03641f2caa114abc195c67ef5abcd, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

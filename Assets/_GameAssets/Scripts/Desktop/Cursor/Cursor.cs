@@ -277,7 +277,7 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
         }
         else
         {
-            Debug.LogError($"Cursor sprite override has null sprite!");
+            Debug.LogWarning($"Cursor sprite override has null sprite!");
             cursorImage.sprite = Resources.Load<Sprite>("TX_Error_Sprite");
         }
     }

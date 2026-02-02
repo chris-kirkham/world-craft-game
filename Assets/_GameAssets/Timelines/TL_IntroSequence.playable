@@ -9,11 +9,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 64da08f90a4e74a41ae61ff1dccf769c, type: 3}
-  m_Name: CraftData_Air
+  m_Script: {fileID: 11500000, guid: bfda56da833e2384a9677cd3c976a436, type: 3}
+  m_Name: TL_IntroSequence
   m_EditorClassIdentifier: 
-  itemName: Air
-  thumbnailTex: {fileID: 2800000, guid: 46c7dcfc39f6a214199eb2acaed1912d, type: 3}
-  contentPrefab: {fileID: 0}
-  prerequisites: []
-  products: []
+  m_Version: 0
+  m_Tracks: []
+  m_FixedDuration: 0
+  m_EditorSettings:
+    m_Framerate: 60
+    m_ScenePreview: 1
+  m_DurationMode: 0
+  m_MarkerTrack: {fileID: 0}

@@ -19,6 +19,7 @@ public class CameraMovement : MonoBehaviour, ICursorEventListener
     [SerializeField, Range(0f, 1f)] private float edgeZoneStartY;
     [SerializeField] private AnimationCurve edgeDragSpeedCurve;
 
+    private bool movementEnabled = true;
     private bool isDragging;
     private Vector2 mouseDelta;
     private float zoomDelta;
@@ -59,8 +60,12 @@ public class CameraMovement : MonoBehaviour, ICursorEventListener
 
     private void LateUpdate()
     {
-        UpdatePan();
-        UpdateZoom(zoomDelta);
+        if(movementEnabled)
+        {
+            UpdatePan();
+            UpdateZoom(zoomDelta);
+        }
+        
         ClampCameraPos();
         
         if(!Cursor.Inst.IsRightClickPressed)
@@ -152,6 +157,11 @@ public class CameraMovement : MonoBehaviour, ICursorEventListener
         }
 
         zoomDelta = 0f;
+    }
+
+    public void SetMovementEnabled(bool enabled)
+    {
+        movementEnabled = enabled;
     }
 
     public void OnCursorEvent(Cursor.CursorEvent e)

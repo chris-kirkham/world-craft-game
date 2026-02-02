@@ -170,6 +170,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
             if (imageMat)
             {
                 imageMat.mainTexture = itemData.ThumbnailTex;
+                imageMat.SetTexture("_EmissionMap", itemData.ThumbnailTex);
                 image.gameObject.SetActive(true);
                 thumbnailImage.gameObject.SetActive(false);
             }

@@ -459,9 +459,14 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         }
     }
 
-    private CraftingItem InstantiateItem(CraftingItemData itemData, Vector3 position)
+    public CraftingItem InstantiateItem(CraftingItemData itemData, Vector3 position)
     {
-        var item = Instantiate<CraftingItem>(thumbnailPrefab, position, Quaternion.identity);
+        return InstantiateItem(itemData, position, Quaternion.identity);
+    }
+
+    public CraftingItem InstantiateItem(CraftingItemData itemData, Vector3 position, Quaternion rotation)
+    {
+        var item = Instantiate<CraftingItem>(thumbnailPrefab, position, rotation);
         item.Data = itemData;
         item.OnCrafted();
 

@@ -1,0 +1,59 @@
+using UnityEngine;
+
+public class IntroSeqCraftingItem : MonoBehaviour, ICursorEventListener
+{
+    [SerializeField] private CraftingItem item;
+    [SerializeField] private IntroSequence introSequence;
+    [SerializeField] private GameObject onHoverText;
+
+    private bool isHovered;
+
+    private void OnEnable()
+    {
+        if(onHoverText)
+        {
+            onHoverText.SetActive(false);
+        }
+    }
+
+    private void Start()
+    {
+        if (Cursor.InstExists())
+        {
+            Cursor.Inst.AddCursorEventListener(this);
+        }
+    }
+
+    private void OnDisable()
+    {
+        if(Cursor.InstExists())
+        {
+            Cursor.Inst.RemoveCursorEventListener(this);
+        }
+    }
+
+    private void OnSelected()
+    {
+        introSequence.OnChooseItem(item);
+    }
+
+    public void OnCursorEvent(Cursor.CursorEvent e)
+    {
+        if(e == Cursor.CursorEvent.EnterElement)
+        {
+            isHovered = true;
+            onHoverText.SetActive(true);
+        }
+
+        if (e == Cursor.CursorEvent.ExitElement)
+        {
+            isHovered = false;
+            onHoverText.SetActive(false);
+        }
+
+        if(e == Cursor.CursorEvent.LeftClickDown && isHovered)
+        {
+            OnSelected();
+        }
+    }
+}

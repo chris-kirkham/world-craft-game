@@ -203,7 +203,6 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         return resultState;
     }
 
-    //TODO: PROTOTYPE, optimise!!!!
     public CraftingResultState GetCraftResultAllItems(HashSet<CraftingItem> ingredients, out CraftingItemData result)
     {
         result = null;

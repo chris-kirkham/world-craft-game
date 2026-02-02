@@ -46,8 +46,7 @@ public abstract class DraggableElement : MonoBehaviour, ICursorEventListener
 
     private void LateUpdate()
     {
-        //only remove as drag target at end of frame to allow other scripts to use it before then
-        //TODO: messy, refactor
+        //N.B. only remove as drag target at end of frame to allow other scripts to use it before then
         if(!isDragging && Cursor.Inst.CurrentDragTarget == this)
         {
             Cursor.Inst.CurrentDragTarget = null;

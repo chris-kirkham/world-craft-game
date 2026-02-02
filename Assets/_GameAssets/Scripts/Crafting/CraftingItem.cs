@@ -262,16 +262,13 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
 
     private void OnDragStart()
     {
-        //TODO: other stuff to do here?
         SetPartialCraftVFX(false);
     }
 
     //called when this item is first crafted
     public void OnCrafted()
     {
-        //TODO: other VFX
         OnCraftedVFX();
-        //StartCoroutine(OnCraftedAnim(transform, Cursor.Inst.ClampedPosition_WS));
 
         SetCollisionEnabled(false);
         StartCoroutine(SetCollisionEnabledWithDelay(true, onCraftedCollisionEnableDelay));
@@ -283,15 +280,6 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         {
             onCraftedVFX.SetActive(true);
         }
-    }
-
-    //TODO: prototype/placeholder
-    private void OnCraftedPush()
-    {
-        var pushForce = Random.insideUnitCircle;
-        rb.AddForce(new Vector3(pushForce.x, 1f, pushForce.y), ForceMode.Acceleration);
-        var pushTorque = new Vector3(0f, Random.Range(-15f, 15f), 0f);
-        rb.AddTorque(pushTorque, ForceMode.Acceleration);
     }
 
     public void OnCraftAttempt(CraftingManager.CraftingResultState resultState)
@@ -318,17 +306,6 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     private void OnSuccessfulCraft()
     {
         SetCollisionEnabled(false);
-        Destroy(gameObject);
-        //StartCoroutine(OnSuccessfulCraftAnim());
-    }
-
-    private IEnumerator OnSuccessfulCraftAnim()
-    {
-        //TODO: other VFX
-        SetAcceptInput(false);
-        OnCraftedPush();
-        yield return new WaitForSeconds(1f);
-        SetAcceptInput(true); //ONLY IF NOT DESTROYING ON CRAFT
         Destroy(gameObject);
     }
 

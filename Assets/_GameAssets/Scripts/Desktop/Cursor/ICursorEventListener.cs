@@ -3,6 +3,7 @@ using UnityEngine;
 
 public interface ICursorEventListener
 { 
+    /*
     //TODO: ???
     [Flags]
     public enum EventsToListenFor
@@ -12,6 +13,7 @@ public interface ICursorEventListener
         InChildren = 1 << 2,
         MAX = 1 << 3
     }
+    */
 
     public void OnCursorEvent(Cursor.CursorEvent e);
 }

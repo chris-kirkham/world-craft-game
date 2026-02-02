@@ -80,7 +80,6 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
     public bool IsRightClickPressed => mouseButtonsPressed[1];
     public bool IsMiddleClickPressed => mouseButtonsPressed[2];
 
-    //TODO: 
     public Camera Cam => cam;
 
     //TODO: refactor into some kind of drag manager if drags get complex OR if we can have multiple simultaneous elements being dragged
@@ -125,8 +124,7 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
         RemoveFlaggedCursorEventListeners();
     }
 
-    //TODO: refactor and make more efficient!
-    //TODO: probably don't need both physics and UI (event system) raycasts?
+    //TODO: refactor and make more efficient! probably don't need both physics and UI (event system) raycasts?
     private void DoCursorRaycasts()
     {
         int listenerHitCount = 0;
@@ -221,9 +219,6 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
         }
     }
 
-    
-
-    //TODO: make this more efficient!
     private List<RaycastResult> GetUIRaycastResults()
     {
         pointerEventData = new PointerEventData(eventSystem);
@@ -314,12 +309,6 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
         }
 
         listenersToRemove.Clear();
-    }
-
-    public bool IsCursorOverElement(ICursorEventListener element)
-    {
-        //TODO: inefficient list search (why isn't hoveredListeners a HashSet?)
-        return hoveredListeners.Contains(element);
     }
 
     public void FreezeCursorPos(bool frozen)

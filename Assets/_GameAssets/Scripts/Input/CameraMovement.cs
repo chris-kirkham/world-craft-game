@@ -152,7 +152,7 @@ public class CameraMovement : MonoBehaviour, ICursorEventListener
         }
         else //perspective camera - move camera forward and backward
         {
-            //TODO: clamp cam forward position range
+            //TODO: stop cam from sliding along rear clamp when trying to zoom out past min
             cam.transform.position += cam.transform.forward * zoomDelta * zoomSpeed;
         }
 

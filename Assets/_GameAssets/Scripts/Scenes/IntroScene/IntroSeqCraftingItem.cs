@@ -10,7 +10,12 @@ public class IntroSeqCraftingItem : MonoBehaviour, ICursorEventListener
 
     private void OnEnable()
     {
-        if(onHoverText)
+        if (Cursor.InstExists())
+        {
+            Cursor.Inst.AddCursorEventListener(this);
+        }
+
+        if (onHoverText)
         {
             onHoverText.gameObject.SetActive(false);
         }

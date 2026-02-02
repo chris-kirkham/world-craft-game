@@ -1,9 +1,6 @@
-using NUnit.Framework;
-using System;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-//TODO: all the drag-resizing code can probably be made much neater
 public class ResizeDragHandle : DraggableUIElement
 {
     private enum Side

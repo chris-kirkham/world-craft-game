@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorEventListener
@@ -64,7 +63,6 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
     [SerializeField] private CraftingItem thumbnailPrefab;
     [SerializeField] private CraftingItemWindow windowPrefab;
     [SerializeField] private CraftingDebugDisplay debugDisplay;
-    [SerializeField] private List<CrafterPlacementZone> placementZones;
     [Space]
     [SerializeField] private List<CraftingItemData> randomProducts;
     [Space]
@@ -72,9 +70,9 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
     [SerializeField] private float helperSpawnMinTime = 1f;
     [SerializeField] private float helperSpawnMaxTime = 10f;
 
-    private List<CraftingItemData> currentIngredients = new List<CraftingItemData>();
-
     private HashSet<CraftingItem> activeItems = new HashSet<CraftingItem>(); //list of all active crafting items currently on the board
+
+    private List<CraftingItem> unusedIngredients = new List<CraftingItem>(); //unused ingredients during each craft attempt
 
     //Dictionary of {ITEM : CONTACTS} where ITEM is the item which initially reported the contact.
     //Contains duplicates so all contacts can be found using any contacting item's key, e.g.
@@ -90,14 +88,6 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 
     private Coroutine spawnHelperItemCoroutine;
 
-    private void OnEnable()
-    {
-        foreach(var placementZone in placementZones)
-        {
-            placementZone.ItemPlaced += OnItemPlaced;
-        }
-    }
-
     private void Start()
     {
         Cursor.Inst.AddCursorEventListener(this);
@@ -105,11 +95,6 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 
     private void OnDisable()
     {
-        foreach (var placementZone in placementZones)
-        {
-            placementZone.ItemPlaced -= OnItemPlaced;
-        }
-
         if(Cursor.InstExists())
         {
             Cursor.Inst.RemoveCursorEventListener(this);
@@ -150,12 +135,6 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
                 spawnHelperItemCoroutine = StartCoroutine(SpawnHelperItem());
             }
         }
-    }
-
-    private void OnItemPlaced(CraftingItemData itemData)
-    {
-        Debug.Log($"Item {itemData.name} placed in crafter!");
-        currentIngredients.Add(itemData);
     }
 
     public void AddItemContact(CraftingItem item, CraftingItem contactingItem)
@@ -211,13 +190,6 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
             Debug.Log($"Successfully crafted {craftResult.ItemName} from ingredients " + string.Join(", ", ingredients) + "!");
 
             StartCoroutine(DoSuccessfulCraft(ingredients, craftResult));
-
-            /* TODO: figure out if using placement zones 
-            foreach (var placementZone in placementZones)
-            {
-                placementZone.RemoveItem();
-            }
-            */
         }
         else
         {
@@ -282,8 +254,10 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 
     private int GetNumMatchingIngredientsToItemPrereqs(CraftingItemData item, HashSet<CraftingItem> ingredients)
     {
+        unusedIngredients.Clear();
+        unusedIngredients.AddRange(ingredients);
+
         int numMatching = 0;
-        var unusedIngredients = new List<CraftingItem>(ingredients); //TODO: ALLOCATION
         foreach (var prereqData in item.Prerequisites)
         {
             for (int i = unusedIngredients.Count - 1; i >= 0; i--)
@@ -430,7 +404,6 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         }
     }
 
-    //TODO: need to sort crafting flow out - really think about it!
     private void TryCraftAllItemContacts()
     {
         if(!canCraft)

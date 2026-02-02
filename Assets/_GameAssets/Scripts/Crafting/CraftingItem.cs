@@ -49,7 +49,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
 
     private void OnValidate()
     {
-        UpdateData();
+        //UpdateData();
     }
 
     private void OnEnable()
@@ -94,10 +94,6 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         if (Cursor.InstExists())
         {
             Cursor.Inst.RemoveCursorEventListener(this);
-        }
-        else
-        {
-            Debug.LogError($"Instance of {nameof(Cursor)} not found!");
         }
 
         if(CraftingManager.InstExists())

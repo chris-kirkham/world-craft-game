@@ -62,6 +62,8 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
     //private bool[] mouseButtonsPressedLastTick = new bool[3]; //0 = left, 1 = right, 2 = middle
 
     private HashSet<ICursorEventListener> trackedListeners = new HashSet<ICursorEventListener>(); //event listeners
+    //listeners flagged to be removed at the end of a frame (to avoid collection modification during a frame and messing other things up) (probably a better way to do this)
+    private HashSet<ICursorEventListener> listenersToRemove = new HashSet<ICursorEventListener>(); 
     private List<ICursorEventListener> hoveredListeners = new List<ICursorEventListener>(); //event listeners the cursor is currently on top of
     private List<SpriteOverride> spriteOverrides = new List<SpriteOverride>();
 
@@ -119,6 +121,8 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
 
         prevRawMousePosition = rawMousePosition;
         prevClampedMousePos_WS = ClampedPosition_WS;
+
+        RemoveFlaggedCursorEventListeners();
     }
 
     //TODO: refactor and make more efficient!
@@ -296,7 +300,20 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
     public void RemoveCursorEventListener(ICursorEventListener listener)
     {
         //Debug.Log($"Removing cursor event listener {listener.ToString()}; new listener count: {trackedListeners.Count - 1}");
-        trackedListeners.Remove(listener);
+        listenersToRemove.Add(listener);
+    }
+
+    private void RemoveFlaggedCursorEventListeners()
+    {
+        foreach(var listener in listenersToRemove)
+        {
+            if(trackedListeners.Contains(listener))
+            {
+                trackedListeners.Remove(listener);
+            }
+        }
+
+        listenersToRemove.Clear();
     }
 
     public bool IsCursorOverElement(ICursorEventListener element)

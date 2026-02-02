@@ -16,7 +16,15 @@ public class IntroSequence : MonoBehaviour
         }
         else
         {
-            Debug.LogError($"No {nameof(CameraMovement)} set!");
+            playerCam = FindFirstObjectByType<CameraMovement>();
+            if(playerCam)
+            {
+                playerCam.SetMovementEnabled(false);
+            }
+            else
+            {
+                Debug.LogError($"No {nameof(CameraMovement)} set and none found in scene!");
+            }
         }
     }
 
@@ -34,6 +42,12 @@ public class IntroSequence : MonoBehaviour
         foreach(var t in itemSpawnTransforms)
         {
             CraftingManager.Inst.InstantiateItem(item.Data, t.position, t.rotation);
+        }
+
+        //delete starting items
+        foreach(var startingItem in startingItemChoices)
+        {
+            Destroy(startingItem.gameObject);
         }
     }
 

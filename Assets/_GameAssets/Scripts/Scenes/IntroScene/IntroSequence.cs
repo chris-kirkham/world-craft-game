@@ -10,6 +10,7 @@ public class IntroSequence : MonoBehaviour
     [SerializeField] private FadeInOutText topText;
     [SerializeField] private List<IntroSeqCraftingItem> startingItemChoices;
     [SerializeField] private List<Transform> itemSpawnTransforms;
+    [SerializeField] private GameObject postIntroLighting;
 
     private void OnEnable()
     {
@@ -28,6 +29,11 @@ public class IntroSequence : MonoBehaviour
             {
                 Debug.LogError($"No {nameof(CameraMovement)} set and none found in scene!");
             }
+        }
+
+        if(postIntroLighting)
+        {
+            postIntroLighting.SetActive(false);
         }
     }
 
@@ -56,6 +62,8 @@ public class IntroSequence : MonoBehaviour
         }
 
         topText.PlayClipThenDisable();
+
+        postIntroLighting.SetActive(true);
     }
 
     private void OnDrawGizmos()

@@ -25,7 +25,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 5175
+  controlID: 16654
   draggingID: 0
 --- !u!114 &2
 MonoBehaviour:
@@ -193,9 +193,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 
+      m_SelectedIDs: 0e020100
       m_LastClickedID: 0
-      m_ExpandedIDs: e054fdff9856fdff0eeffdffe2f5fdff34f6fdff3cf6fdff7cf6fdff5a46feff7250fefff653feff1454feff1e54feff2a54feff1056feff1c56feff2056feff7256feff7a56feffee57feff8459feff8c59feffce59feff3866feff4a66feffa86efeff86d1feff32d4feff88f3feff90f3feffd2f3feff76f8feffb204ffff1809fffff4ffffff282801002e2801006c280100242d0100342d01006e2d0100
+      m_ExpandedIDs: 1ea5fbff8eb4fbff8eb7fbff04c7fbffb6cdfbffc4cdfbffc2d0fbffd2d0fbffd4d0fbff9ed3fbffacd3fbff2ed8fbffb2d9fbffbad9fbfffcd9fbffdcdbfbffeadbfbfffadefbff06e6fbff18e6fbffc8edfbff2ef1fbff78f1fbff30f2fbffe054fdff9856fdff0eeffdffe2f5fdff34f6fdff3cf6fdff7cf6fdff5a46feff7250fefff653feff1454feff1e54feff2a54feff1056feff1c56feff2056feff7256feff7a56feffee57feff8459feff8c59feffce59feff3866feff4a66feffa86efeff86d1feff32d4feff88f3feff90f3feffd2f3feff76f8feffb204ffff1809fffff4ffffff282801002e2801006c280100242d0100342d01006e2d0100
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -244,7 +244,7 @@ MonoBehaviour:
   m_MinSize: {x: 100, y: 100}
   m_MaxSize: {x: 8096, y: 16192}
   vertical: 1
-  controlID: 5176
+  controlID: 16655
   draggingID: 0
 --- !u!114 &6
 MonoBehaviour:
@@ -898,7 +898,7 @@ MonoBehaviour:
       scrollOffset: 0
     m_OverlaysVisible: 1
   m_WindowGUID: b015848c5fc003e41a946e11133a4361
-  m_Gizmos: 1
+  m_Gizmos: 0
   m_OverrideSceneCullingMask: 6917529027641081856
   m_SceneIsLit: 1
   m_SceneLighting: 1
@@ -908,9 +908,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: -0.3692422, y: -14.627129, z: 8.511338}
+    m_Target: {x: 0.33113542, y: -9.2866745, z: -0.70904154}
     speed: 2
-    m_Value: {x: -0.3692422, y: -14.627129, z: 8.511338}
+    m_Value: {x: 0.33113542, y: -9.2866745, z: -0.70904154}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -956,13 +956,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: -0.49925497, y: 0.013946604, z: -0.008037705, w: -0.86631286}
+    m_Target: {x: -0.68661267, y: 0.0029781014, z: -0.002814405, w: -0.7270386}
     speed: 2
-    m_Value: {x: -0.4992518, y: 0.0139465155, z: -0.008037654, w: -0.8663074}
+    m_Value: {x: -0.6865993, y: 0.0029780434, z: -0.0028143502, w: -0.7270245}
   m_Size:
-    m_Target: 10
+    m_Target: 8.282621
     speed: 2
-    m_Value: 10
+    m_Value: 8.282621
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -1071,7 +1071,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/_GameAssets/Prefabs
+    - Assets/_GameAssets/Scenes
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -1081,16 +1081,16 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 16
   m_LastFolders:
-  - Assets/_GameAssets/Prefabs
+  - Assets/_GameAssets/Scenes
   m_LastFoldersGridSize: -1
   m_LastProjectPath: C:\Users\Chris\Unity Projects\WindowsTest
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
-    scrollPos: {x: 0, y: 27.333374}
-    m_SelectedIDs: c2ff0000
-    m_LastClickedID: 65474
-    m_ExpandedIDs: 0000000008fe00009c100100e21a010000ca9a3bffffff7f
+    scrollPos: {x: 0, y: 87.333374}
+    m_SelectedIDs: e8090100
+    m_LastClickedID: 68072
+    m_ExpandedIDs: 0000000008fe00009c10010000ca9a3bffffff7f
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1145,24 +1145,24 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs: 
-    m_LastClickedInstanceID: 0
+    m_SelectedInstanceIDs: 0e020100
+    m_LastClickedInstanceID: 66062
     m_HadKeyboardFocusLastEvent: 1
     m_ExpandedInstanceIDs: 66b000002c020000100700000ac30000feb9000038b0000000000000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
-      m_Name: 
-      m_OriginalName: 
+      m_Name: SC_Intro
+      m_OriginalName: SC_Intro
       m_EditFieldRect:
         serializedVersion: 2
         x: 0
         y: 0
         width: 0
         height: 0
-      m_UserData: 0
+      m_UserData: 65930
       m_IsWaitingForDelay: 0
       m_IsRenaming: 0
-      m_OriginalEventType: 11
+      m_OriginalEventType: 0
       m_IsRenamingFilename: 1
       m_TrimLeadingAndTrailingWhitespace: 0
       m_ClientGUIView: {fileID: 8}

@@ -300,11 +300,15 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
 
     public void SetPartialCraftVFX(bool on)
     {
-        craftingPotentialVFX.SetActive(on);
+        if(craftingPotentialVFX)
+        {
+            craftingPotentialVFX.SetActive(on);
+        }
     }
 
     private void OnSuccessfulCraft()
     {
+        SetPartialCraftVFX(false);
         SetCollisionEnabled(false);
         Destroy(gameObject);
     }
@@ -329,7 +333,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
 
     public void TogglePhysics(bool enabled)
     {
-        rb.isKinematic = enabled;
-        coll.enabled = !enabled;
+        rb.isKinematic = !enabled;
+        coll.enabled = enabled;
     }
 }

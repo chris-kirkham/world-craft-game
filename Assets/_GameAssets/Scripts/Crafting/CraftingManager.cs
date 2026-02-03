@@ -1,3 +1,4 @@
+using NUnit.Framework.Interfaces;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -54,7 +55,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 
     public enum CraftingResultState
     {
-        NoIngredientMatch,
+        None,
         PartialIngredientMatch,
         SuccessfulCraft
     }
@@ -72,7 +73,11 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 
     private HashSet<CraftingItem> activeItems = new HashSet<CraftingItem>(); //list of all active crafting items currently on the board
 
+    //cached lists of stuff
     private List<CraftingItem> unusedIngredients = new List<CraftingItem>(); //unused ingredients during each craft attempt
+    private const int MaxResultsPerCraft = 10; //increase this if we need more
+    private CraftingItemData[] craftResults = new CraftingItemData[MaxResultsPerCraft];
+    private CraftingResultState[] craftResultStates = new CraftingResultState[MaxResultsPerCraft];
 
     //Dictionary of {ITEM : CONTACTS} where ITEM is the item which initially reported the contact.
     //Contains duplicates so all contacts can be found using any contacting item's key, e.g.
@@ -114,12 +119,12 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
             }
         }
 
-        TryCraftAllItemContacts();
-
-        if(debugDisplay)
+        if (debugDisplay)
         {
             debugDisplay.SetDebugInfo(itemContactGroups);
         }
+
+        TryCraftAllItemContacts();
 
         if(CheckForPossibleCrafts())
         {
@@ -182,38 +187,54 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         }
     }
 
-    private CraftingResultState TryCraft(HashSet<CraftingItem> ingredients)
+    private int TryCraft(HashSet<CraftingItem> ingredients)
     {
-        var resultState = GetCraftResultAllItems(ingredients, out var craftResult);
-        if(resultState == CraftingResultState.SuccessfulCraft)
-        {
-            Debug.Log($"Successfully crafted {craftResult.ItemName} from ingredients " + string.Join(", ", ingredients) + "!");
+        var numResults = GetCraftResultAllItems(ingredients, craftResults, craftResultStates);
 
-            StartCoroutine(DoSuccessfulCraft(ingredients, craftResult));
-        }
-        else
+        if(numResults == 0)
         {
-            foreach (var ingredient in ingredients)
+            return numResults;
+        }
+
+        //TODO: ALLOCATION
+        var anySuccessfulCraft = false;
+        var successfulCrafts = new List<CraftingItemData>();
+        for(int i = 0; i < numResults; i++)
+        {
+            if (craftResultStates[i] == CraftingResultState.SuccessfulCraft)
             {
-                //TODO FOR PARTIAL CRAFT RESULT: TELL CRAFTING ITEM IF IT IS PART OF THE CRAFT OR NOT
-                ingredient.OnCraftAttempt(resultState);
+                successfulCrafts.Add(craftResults[i]);
+                anySuccessfulCraft = true;
             }
         }
 
-        return resultState;
+        if(anySuccessfulCraft)
+        {
+            StartCoroutine(DoSuccessfulCrafts(ingredients, successfulCrafts));
+        }
+        else
+        {
+            foreach(var ingredient in ingredients)
+            {
+                //TODO FOR PARTIAL CRAFT RESULT: TELL CRAFTING ITEM IF IT IS PART OF THE CRAFT OR NOT
+                ingredient.OnCraftAttempt(CraftingResultState.PartialIngredientMatch);
+            }
+        }
+
+        return numResults;
     }
 
-    public CraftingResultState GetCraftResultAllItems(HashSet<CraftingItem> ingredients, out CraftingItemData result)
+    private int GetCraftResultAllItems(HashSet<CraftingItem> ingredients, CraftingItemData[] results, CraftingResultState[] resultStates)
     {
-        result = null;
-        var resultState = CraftingResultState.NoIngredientMatch;
-
         if (ingredients.Count < 2)
         {
             Debug.LogError($"Crafting attempted with <2 ingredients! This shouldn't happen");
-            return CraftingResultState.NoIngredientMatch;
+            return 0;
         }
 
+        int numResults = 0;
+        CraftingItemData currentResult = null;
+        CraftingResultState currentResultState;
         foreach (var item in itemDatabase.ItemList)
         {
             //exit if item isn't craftable by two or more other items
@@ -221,6 +242,9 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
             {
                 continue;
             }
+
+            currentResultState = CraftingResultState.None;
+            currentResult = item;
 
             //check number of matching ingredients we have to this item
             int numMatching = GetNumMatchingIngredientsToItemPrereqs(item, ingredients);
@@ -233,22 +257,35 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
                 //if they think a partial craft always has -fewer- ingredients than required
                 if (ingredients.Count > item.Prerequisites.Count)
                 {
-                    resultState = CraftingResultState.PartialIngredientMatch;
+                    currentResultState = CraftingResultState.PartialIngredientMatch;
                 }
                 else //successful craft
                 {
-                    result = item;
-                    return CraftingResultState.SuccessfulCraft;
+                    currentResultState = CraftingResultState.SuccessfulCraft;
                 }
             }
-
-            if (numMatching > 1)
+            else if (numMatching > 1)
             {
-                resultState = CraftingResultState.PartialIngredientMatch;
+                currentResultState = CraftingResultState.PartialIngredientMatch;
+            }
+
+            //if there was a successful or partial result for this item, add it to the results buffer
+            if (currentResultState != CraftingResultState.None)
+            {
+                craftResults[numResults] = currentResult;
+                craftResultStates[numResults] = currentResultState; 
+
+                numResults++;
+
+                if(numResults >= MaxResultsPerCraft)
+                {
+                    Debug.LogError($"More craft results created from this craft than space in the results buffer! Increase its size!!!");
+                    return numResults;
+                }
             }
         }
 
-        return resultState;
+        return numResults;
     }
 
     private int GetNumMatchingIngredientsToItemPrereqs(CraftingItemData item, HashSet<CraftingItem> ingredients)
@@ -274,22 +311,11 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         return numMatching;
     }
 
-    //TODO: placeholder animation
-    private IEnumerator DoSuccessfulCraft(HashSet<CraftingItem> ingredients, CraftingItemData result)
+    //Placeholder sequence! TODO: refactor and optimise
+    private IEnumerator DoSuccessfulCrafts(HashSet<CraftingItem> ingredients, List<CraftingItemData> successfulCrafts)
     {
         var ingredientsList = new List<CraftingItem>(ingredients);
-
         var numIngredients = ingredients.Count;
-
-        /*
-        var centrePos = Vector3.zero;
-        foreach (var ingredient in ingredients)
-        {
-            centrePos += ingredient.transform.position;
-        }
-        centrePos /= ingredients.Count;
-        centrePos += Vector3.up * 0.1f;
-        */
 
         var centrePos = Cursor.Inst.Cam.ScreenToWorldPoint(new Vector3(Screen.width / 2f, Screen.height / 2f, 5f));
         const float startAngle = -90f; //starting angle offset so the first card is on the left rather than top
@@ -299,7 +325,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         //disable collision + make kinematic
         foreach (var ingredient in ingredients)
         {
-            ingredient.TogglePhysics(true);
+            ingredient.TogglePhysics(false);
         }
 
         //lerp ingredients to spin positions
@@ -326,27 +352,6 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         }
         while (t < 1f);
 
-        //spin ingredients in a circle!
-        /*
-        const float spinTime = 1f;
-        const float numSpins = 2f;
-        const float totalRotation = 360f * numSpins;
-        var angle = 0f;
-        t = 0f;
-        do
-        {
-            t = Mathf.Clamp01(t + (Time.deltaTime / spinTime));
-            for(int i = 0; i < numIngredients; i++)
-            {
-                angle = (angleInc * i) + (t * totalRotation);
-                ingredientsList[i].transform.position = centrePos + (Quaternion.Euler(0f, angle, 0f) * Vector3.forward * radius);
-            }
-
-            yield return null;
-        }
-        while (t < 1f);
-        */
-
         //make ingredients converge in the centre!
         const float convergeInCentreTime = 0.5f;
         t = 0f;
@@ -362,40 +367,44 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         }
         while (t < 1f);
 
-        //Instantiate new item
-        var newItemUpOffset = Vector3.up * 2f;
-        var newItem = InstantiateItem(result, centrePos);
-
-        //Instantiate any extra crafting products
-        if(result.ExtraProducts.Count > 0)
+        //Spawn new items
+        var newItemStartAngle = Random.Range(0f, 360f);
+        var newItemOffset = new Vector3(0f, 0.5f, 1f); //forward and up
+        var craftInstantiateAngleInc = 360f / successfulCrafts.Count;
+        for(int i = 0; i < successfulCrafts.Count; i++)
         {
-            foreach (var product in result.ExtraProducts)
+            //Instantiate new item
+            var result = craftResults[i];
+            var posOffset = Quaternion.Euler(0f, (angleInc * i) + newItemStartAngle, 0f) * newItemOffset;
+            var newItem = InstantiateItem(result, centrePos + posOffset);
+
+            //Instantiate any extra products
+            if (result.ExtraProducts.Count > 0)
             {
-                var randomOffset = Random.onUnitSphere * 4f;
-                InstantiateItem(product, centrePos + randomOffset + newItemUpOffset);
+                foreach (var product in result.ExtraProducts)
+                {
+                    var randomOffset = Random.onUnitSphere * 4f;
+                    InstantiateItem(product, centrePos + randomOffset + newItemOffset);
+                }
             }
-        }
-        else //TEST/PROTOTYPE: if no extra products defined, instantiate a random one from the list
-        {
-            var product = randomProducts[Random.Range(0, randomProducts.Count)];
-            InstantiateItem(product, centrePos + (Random.onUnitSphere * 4f) + newItemUpOffset);
-        }
 
-        //animate new item
-        const float animNewItemUpTime = 0.1f;
-        const float moveSpeed = 0.1f;
-        t = 0f;
-        newItem.TogglePhysics(true);
-        
-        do
-        {
-            t = Mathf.Clamp01(t + (Time.deltaTime / animNewItemUpTime));
-            newItem.transform.position += Vector3.up * moveSpeed * t;
-            yield return null;
-        }
-        while (t < 1f);
+            //animate new item
+            const float animNewItemUpTime = 0.1f;
+            const float moveSpeed = 0.1f;
+            t = 0f;
+            newItem.TogglePhysics(false);
+            do
+            {
+                t = Mathf.Clamp01(t + (Time.deltaTime / animNewItemUpTime));
+                newItem.transform.position += Vector3.up * moveSpeed * t;
+                yield return null;
+            }
+            while (t < 1f);
 
-        newItem.TogglePhysics(false);
+            newItem.TogglePhysics(true);
+
+            Debug.Log($"Successfully crafted {craftResults[i].ItemName} from ingredients " + string.Join(", ", ingredients) + "!");
+        }
 
         foreach (var ingredient in ingredientsList)
         {
@@ -418,10 +427,14 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
                 continue;
             }
 
-            var resultState = TryCraft(ingredients.items);
-            if (resultState == CraftingResultState.SuccessfulCraft)
+            var numResults = TryCraft(ingredients.items);
+            for(int i = 0; i < numResults; i++)
             {
-                anySuccessfulCraft = true;
+                if (craftResultStates[i] == CraftingResultState.SuccessfulCraft)
+                {
+                    anySuccessfulCraft = true;
+                    break;
+                }
             }
         }
 

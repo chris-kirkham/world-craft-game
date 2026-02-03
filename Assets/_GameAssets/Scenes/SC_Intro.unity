@@ -229,9 +229,21 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2225310637445092360, guid: ba1b8cb5ff60ca845a568cc4a3687c21, type: 3}
+      propertyPath: m_text
+      value: from the earth
+      objectReference: {fileID: 0}
     - target: {fileID: 2569929175380715987, guid: ba1b8cb5ff60ca845a568cc4a3687c21, type: 3}
       propertyPath: m_Name
       value: P_IntroSequence
+      objectReference: {fileID: 0}
+    - target: {fileID: 3364190310546932319, guid: ba1b8cb5ff60ca845a568cc4a3687c21, type: 3}
+      propertyPath: m_text
+      value: in water
+      objectReference: {fileID: 0}
+    - target: {fileID: 4435342188267456572, guid: ba1b8cb5ff60ca845a568cc4a3687c21, type: 3}
+      propertyPath: m_text
+      value: from the air
       objectReference: {fileID: 0}
     - target: {fileID: 4497914261116184253, guid: ba1b8cb5ff60ca845a568cc4a3687c21, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -244,6 +256,10 @@ PrefabInstance:
     - target: {fileID: 4497914261116184253, guid: ba1b8cb5ff60ca845a568cc4a3687c21, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7639886226395802631, guid: ba1b8cb5ff60ca845a568cc4a3687c21, type: 3}
+      propertyPath: m_text
+      value: through fire
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

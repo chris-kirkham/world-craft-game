@@ -1,11 +1,14 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Playables;
 
 public class IntroSequence : MonoBehaviour
 {
+    [SerializeField] private PlayableDirector playableDirector;
     [SerializeField] private CameraMovement playerCam;
-    [SerializeField] private List<CraftingItem> startingItemChoices;
+    [SerializeField] private FadeInOutText topText;
+    [SerializeField] private List<IntroSeqCraftingItem> startingItemChoices;
     [SerializeField] private List<Transform> itemSpawnTransforms;
 
     private void OnEnable()
@@ -38,6 +41,8 @@ public class IntroSequence : MonoBehaviour
 
     public void OnChooseItem(CraftingItem item)
     {
+        playableDirector.Stop();
+
         //spawn copies of chosen item at spawn positions
         foreach(var t in itemSpawnTransforms)
         {
@@ -49,6 +54,8 @@ public class IntroSequence : MonoBehaviour
         {
             Destroy(startingItem.gameObject);
         }
+
+        topText.PlayClipThenDisable();
     }
 
     private void OnDrawGizmos()

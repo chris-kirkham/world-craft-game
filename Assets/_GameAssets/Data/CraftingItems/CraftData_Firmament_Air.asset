@@ -10,12 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64da08f90a4e74a41ae61ff1dccf769c, type: 3}
-  m_Name: CraftData_Space
+  m_Name: CraftData_Firmament_Air
   m_EditorClassIdentifier: 
-  itemName: Space
-  thumbnailTex: {fileID: 0}
+  itemName: Firmament (air)
+  thumbnailTex: {fileID: 2800000, guid: b37e0709c6c95c54a9f04bf7f24554b8, type: 3}
   contentPrefab: {fileID: 0}
   prerequisites:
-  - {fileID: 11400000, guid: afce6253c57c4754abfa2df1cca177c9, type: 2}
-  - {fileID: 11400000, guid: 9d1b919e81d0a5449ae995f2b8d1d096, type: 2}
-  products: []
+  - {fileID: 11400000, guid: a5ecc6b4dca2d814fb3b56f35b0be370, type: 2}
+  - {fileID: 11400000, guid: a5ecc6b4dca2d814fb3b56f35b0be370, type: 2}
+  products:
+  - {fileID: 11400000, guid: c6ddf3c03eeddc8448ae41fef5ff0bf0, type: 2}

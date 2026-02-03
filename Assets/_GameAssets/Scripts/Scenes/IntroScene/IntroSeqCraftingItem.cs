@@ -8,6 +8,8 @@ public class IntroSeqCraftingItem : MonoBehaviour, ICursorEventListener
 
     private bool isHovered;
 
+    public CraftingItemData ItemData => item.Data;
+
     private void OnEnable()
     {
         if (Cursor.InstExists())
@@ -35,6 +37,8 @@ public class IntroSeqCraftingItem : MonoBehaviour, ICursorEventListener
         {
             Cursor.Inst.RemoveCursorEventListener(this);
         }
+
+        onHoverText.PlayClipThenDisable();
     }
 
     private void OnSelected()

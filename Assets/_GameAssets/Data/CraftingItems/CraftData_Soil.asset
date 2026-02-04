@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: CraftData_Soil
   m_EditorClassIdentifier: 
   itemName: Soil
+  craftingAliases:
+  - {fileID: 11400000, guid: 33fbd6f9fc3345f4c842fd6e648b25e7, type: 2}
   thumbnailTex: {fileID: 2800000, guid: 5499fe36fc344c84b97f8ee0517b0f7e, type: 3}
   contentPrefab: {fileID: 0}
   prerequisites:

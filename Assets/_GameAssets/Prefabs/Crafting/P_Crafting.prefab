@@ -139,7 +139,6 @@ MonoBehaviour:
   thumbnailPrefab: {fileID: 9176190644264876341, guid: 668d21fcae2ec3b4590f94b650ec3915, type: 3}
   windowPrefab: {fileID: 6500830298233221005, guid: 0fcedcac6452e4341b2b3b82bc8fc9f4, type: 3}
   debugDisplay: {fileID: 0}
-  placementZones: []
   randomProducts:
   - {fileID: 11400000, guid: 299c2723918579e43af015a05132e2e1, type: 2}
   - {fileID: 11400000, guid: a5ecc6b4dca2d814fb3b56f35b0be370, type: 2}
@@ -147,7 +146,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c03eaadaeb521804ba15be4202e99e2a, type: 2}
   - {fileID: 11400000, guid: c1403b9372aa9db4398fb8d2a46111b6, type: 2}
   - {fileID: 11400000, guid: 447e815deba235b44b2604f425d83cd7, type: 2}
-  SpawnHelperIngredientsIfNoCraftPossible: 0
+  SpawnHelperIngredientsIfNoCraftPossible: 1
   helperSpawnMinTime: 1
   helperSpawnMaxTime: 10
 --- !u!114 &7400573137721866168

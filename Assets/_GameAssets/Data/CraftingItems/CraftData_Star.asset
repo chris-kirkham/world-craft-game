@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: CraftData_Star
   m_EditorClassIdentifier: 
   itemName: Star
-  thumbnailTex: {fileID: 0}
+  craftingAliases: []
+  thumbnailTex: {fileID: 10300, guid: 0000000000000000f000000000000000, type: 0}
   contentPrefab: {fileID: 0}
   prerequisites:
   - {fileID: 11400000, guid: 447e815deba235b44b2604f425d83cd7, type: 2}

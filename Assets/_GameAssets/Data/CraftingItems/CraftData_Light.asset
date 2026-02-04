@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: CraftData_Light
   m_EditorClassIdentifier: 
   itemName: Light
-  thumbnailTex: {fileID: 2800000, guid: 9f578fd8953010342bcb7d4e81cff522, type: 3}
+  craftingAliases: []
+  thumbnailTex: {fileID: 2800000, guid: c89c6960c5d676d4cae3edb3ee14e393, type: 3}
   contentPrefab: {fileID: 0}
   prerequisites: []
   products: []

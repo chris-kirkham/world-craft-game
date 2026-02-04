@@ -211,6 +211,17 @@ MonoBehaviour:
   m_PointerBehavior: 0
   m_CursorLockBehavior: 0
   m_ScrollDeltaPerTick: 6
+--- !u!114 &877541889 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 326826300887866257, guid: 07bd4332b345c7143b9baaef492ccf4c, type: 3}
+  m_PrefabInstance: {fileID: 1684983403}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d66829186ec6e69488510c7c5517f28e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1249820073
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -280,6 +291,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: P_Player
       objectReference: {fileID: 0}
+    - target: {fileID: 7434204518415802807, guid: 07bd4332b345c7143b9baaef492ccf4c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8881636720033572642, guid: 07bd4332b345c7143b9baaef492ccf4c, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -333,6 +348,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -559291666634834028, guid: ddf03641f2caa114abc195c67ef5abcd, type: 3}
+      propertyPath: debugDisplay
+      value: 
+      objectReference: {fileID: 877541889}
     - target: {fileID: 1882925333605516054, guid: ddf03641f2caa114abc195c67ef5abcd, type: 3}
       propertyPath: m_Pivot.x
       value: 0

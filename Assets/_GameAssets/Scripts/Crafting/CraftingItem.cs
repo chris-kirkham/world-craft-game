@@ -137,7 +137,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         CraftingManager.Inst.RemoveItemContact(this, item);
 
         touchingItems.Remove(item);
-        if(touchingItems.Count == 0)
+        if(touchingItems.Count < 2)
         {
             SetPartialCraftVFX(false);
         }

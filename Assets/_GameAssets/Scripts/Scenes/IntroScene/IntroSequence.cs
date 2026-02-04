@@ -64,6 +64,8 @@ public class IntroSequence : MonoBehaviour
         topText.PlayClipThenDisable();
 
         postIntroLighting.SetActive(true);
+
+        playerCam.SetMovementEnabled(true);
     }
 
     private void OnDrawGizmos()

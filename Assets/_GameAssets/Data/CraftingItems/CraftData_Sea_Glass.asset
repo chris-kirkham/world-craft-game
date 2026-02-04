@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: CraftData_Sea_Glass
   m_EditorClassIdentifier: 
   itemName: Sea Glass
-  thumbnailTex: {fileID: 0}
+  craftingAliases: []
+  thumbnailTex: {fileID: 2800000, guid: 51c5797f974db364b8c5fa468de592c3, type: 3}
   contentPrefab: {fileID: 0}
   prerequisites:
   - {fileID: 11400000, guid: d8789cdfd59674d4bb1216d9b19106d6, type: 2}

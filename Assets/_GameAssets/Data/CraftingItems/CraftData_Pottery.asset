@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: CraftData_Pottery
   m_EditorClassIdentifier: 
   itemName: Pottery
-  thumbnailTex: {fileID: 0}
+  craftingAliases: []
+  thumbnailTex: {fileID: 2800000, guid: ae5f143d712eba440bf22ee0af64cb05, type: 3}
   contentPrefab: {fileID: 0}
   prerequisites:
-  - {fileID: 11400000, guid: 33fbd6f9fc3345f4c842fd6e648b25e7, type: 2}
+  - {fileID: 11400000, guid: b97b65d9ec7389448871363ce88509ff, type: 2}
   - {fileID: 11400000, guid: c03eaadaeb521804ba15be4202e99e2a, type: 2}
-  products:
-  - {fileID: 11400000, guid: a5ecc6b4dca2d814fb3b56f35b0be370, type: 2}
+  products: []

@@ -189,14 +189,14 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 
     private int TryCraft(HashSet<CraftingItem> ingredients)
     {
-        var numResults = GetCraftResultAllItems(ingredients, craftResults, craftResultStates);
+        var numResults = GetCraftResultsAllItems(ingredients, craftResults, craftResultStates);
 
         if(numResults == 0)
         {
             return numResults;
         }
 
-        //TODO: ALLOCATION
+        //TODO: allocation
         var anySuccessfulCraft = false;
         var successfulCrafts = new List<CraftingItemData>();
         for(int i = 0; i < numResults; i++)
@@ -224,7 +224,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         return numResults;
     }
 
-    private int GetCraftResultAllItems(HashSet<CraftingItem> ingredients, CraftingItemData[] results, CraftingResultState[] resultStates)
+    private int GetCraftResultsAllItems(HashSet<CraftingItem> ingredients, CraftingItemData[] results, CraftingResultState[] resultStates)
     {
         if (ingredients.Count < 2)
         {
@@ -298,7 +298,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         {
             for (int i = unusedIngredients.Count - 1; i >= 0; i--)
             {
-                if (unusedIngredients[i].Data == prereqData)
+                if (unusedIngredients[i].Data == prereqData || unusedIngredients[i].Data.Aliases.Contains(prereqData))
                 {
                     numMatching++;
                     //Debug.Log($"Checked {prereqData.ItemName} against {unusedIngredients[i].Data}, num matching: {numMatching}");

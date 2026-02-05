@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: CraftData_Firmament_Water
   m_EditorClassIdentifier: 
   itemName: Firmament (water)
-  craftingAliases: []
+  craftingAliases:
+  - {fileID: 11400000, guid: afce6253c57c4754abfa2df1cca177c9, type: 2}
   thumbnailTex: {fileID: 2800000, guid: 48f9d16d52062584eb8f24876ec43140, type: 3}
   contentPrefab: {fileID: 0}
   prerequisites:
@@ -21,3 +22,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 299c2723918579e43af015a05132e2e1, type: 2}
   products:
   - {fileID: 11400000, guid: c6ddf3c03eeddc8448ae41fef5ff0bf0, type: 2}
+  - {fileID: 11400000, guid: 299c2723918579e43af015a05132e2e1, type: 2}

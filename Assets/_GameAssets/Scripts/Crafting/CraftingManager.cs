@@ -1,6 +1,7 @@
 using NUnit.Framework.Interfaces;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorEventListener
@@ -63,13 +64,15 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
     [SerializeField] private CraftingItemDatabase itemDatabase;
     [SerializeField] private CraftingItem thumbnailPrefab;
     [SerializeField] private CraftingItemWindow windowPrefab;
-    [SerializeField] private CraftingDebugDisplay debugDisplay;
+    [Space]
+    [SerializeField] private float multiItemSpawnDelay = 0.1f;
     [Space]
     [SerializeField] private List<CraftingItemData> randomProducts;
-    [Space]
     [SerializeField] private bool SpawnHelperIngredientsIfNoCraftPossible = true;
     [SerializeField] private float helperSpawnMinTime = 1f;
     [SerializeField] private float helperSpawnMaxTime = 10f;
+    [Header("Debug")]
+    [SerializeField] private CraftingDebugDisplay debugDisplay;
 
     private HashSet<CraftingItem> activeItems = new HashSet<CraftingItem>(); //list of all active crafting items currently on the board
 
@@ -78,6 +81,11 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
     private const int MaxResultsPerCraft = 10; //increase this if we need more
     private CraftingItemData[] craftResults = new CraftingItemData[MaxResultsPerCraft];
     private CraftingResultState[] craftResultStates = new CraftingResultState[MaxResultsPerCraft];
+
+    //item spawn raycasts
+    private LayerMask itemLayerMask;
+    private const float MaxRaycastDist = 20f;
+    private readonly Vector3 RaycastStartUpOffset = Vector3.up * 10f;
 
     //Dictionary of {ITEM : CONTACTS} where ITEM is the item which initially reported the contact.
     //Contains duplicates so all contacts can be found using any contacting item's key, e.g.
@@ -96,6 +104,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
     private void Start()
     {
         Cursor.Inst.AddCursorEventListener(this);
+        itemLayerMask = LayerMask.GetMask("Item");
     }
 
     private void OnDisable()
@@ -314,10 +323,22 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
     //Placeholder sequence! TODO: refactor and optimise
     private IEnumerator DoSuccessfulCrafts(HashSet<CraftingItem> ingredients, List<CraftingItemData> successfulCrafts)
     {
+        if(ingredients.Count == 0 || successfulCrafts.Count == 0)
+        {
+            yield break;
+        }
+
         var ingredientsList = new List<CraftingItem>(ingredients);
         var numIngredients = ingredients.Count;
 
-        var centrePos = Cursor.Inst.Cam.ScreenToWorldPoint(new Vector3(Screen.width / 2f, Screen.height / 2f, 5f));
+        //var centrePos = Cursor.Inst.Cam.ScreenToWorldPoint(new Vector3(Screen.width / 2f, Screen.height / 2f, 5f));
+        var centrePos = Vector3.zero;
+        foreach(var ingredient in ingredients)
+        {
+            centrePos += ingredient.transform.position;
+        }
+        centrePos /= ingredients.Count;
+
         const float startAngle = -90f; //starting angle offset so the first card is on the left rather than top
         var angleInc = 360f / ingredients.Count;
         var upInc = Vector3.up * 0.1f; //add a small vertical increment to each card to avoid z-fighting (and to look nice)
@@ -338,7 +359,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
             targetPositions[i] = centrePos + (upInc * i) + (Quaternion.Euler(0f, (angleInc * i) + startAngle, 0f) * Vector3.forward * radius);
         }
 
-        const float lerpToOuterTime = 1f;
+        const float lerpToOuterTime = 0.75f;
         var t = 0f;
         do
         {
@@ -367,49 +388,88 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         }
         while (t < 1f);
 
-        //Spawn new items
+        //Spawn new items - angle stuff is jank lmao
         var newItemStartAngle = Random.Range(0f, 360f);
         var newItemOffset = new Vector3(0f, 0.5f, 1f); //forward and up
-        var craftInstantiateAngleInc = 360f / successfulCrafts.Count;
+        var numToSpawn = successfulCrafts.Count;
+        foreach(var result in successfulCrafts)
+        {
+            numToSpawn += result.ExtraProducts.Count;
+        }
+        var craftInstantiateAngleInc = 360f / numToSpawn;
+        int spawnCount = 0;
+
         for(int i = 0; i < successfulCrafts.Count; i++)
         {
+            Debug.Log($"Successfully crafted {successfulCrafts[i].ItemName} from ingredients " + string.Join(", ", ingredients) + "!");
+
             //Instantiate new item
-            var result = craftResults[i];
-            var posOffset = Quaternion.Euler(0f, (angleInc * i) + newItemStartAngle, 0f) * newItemOffset;
-            var newItem = InstantiateItem(result, centrePos + posOffset);
+            var result = successfulCrafts[i];
+            var posOffset = Quaternion.Euler(0f, (angleInc * spawnCount) + newItemStartAngle, 0f) * newItemOffset;
+            SpawnItem(result, centrePos + posOffset);
+            spawnCount++;
+
+            //TODO: "new WaitForSeconds" allocates - make a helper class to get WaitForSecondses without allocation
+            yield return new WaitForSeconds(multiItemSpawnDelay); 
 
             //Instantiate any extra products
             if (result.ExtraProducts.Count > 0)
             {
                 foreach (var product in result.ExtraProducts)
                 {
-                    var randomOffset = Random.onUnitSphere * 4f;
-                    InstantiateItem(product, centrePos + randomOffset + newItemOffset);
+                    //spawn item
+                    posOffset = Quaternion.Euler(0f, (angleInc * spawnCount) + newItemStartAngle, 0f) * newItemOffset;
+                    SpawnItem(product, centrePos + posOffset);
+                    spawnCount++;
+                    Debug.Log($"Spawned extra product {product.ItemName} from craft result {result.ItemName}!");
+
+                    yield return new WaitForSeconds(multiItemSpawnDelay);
                 }
             }
-
-            //animate new item
-            const float animNewItemUpTime = 0.1f;
-            const float moveSpeed = 0.1f;
-            t = 0f;
-            newItem.TogglePhysics(false);
-            do
-            {
-                t = Mathf.Clamp01(t + (Time.deltaTime / animNewItemUpTime));
-                newItem.transform.position += Vector3.up * moveSpeed * t;
-                yield return null;
-            }
-            while (t < 1f);
-
-            newItem.TogglePhysics(true);
-
-            Debug.Log($"Successfully crafted {craftResults[i].ItemName} from ingredients " + string.Join(", ", ingredients) + "!");
         }
 
         foreach (var ingredient in ingredientsList)
         {
             ingredient.OnCraftAttempt(CraftingResultState.SuccessfulCraft);
         }
+    }
+
+    private void SpawnItem(CraftingItemData itemData, Vector3 targetSpawnPos)
+    {
+        //instantiate item
+        var item = InstantiateItem(itemData, GetFreeSpawnPosition(targetSpawnPos));
+    }
+
+    private Vector3 GetFreeSpawnPosition(Vector3 targetPos)
+    {
+        var aabbExtents = new Vector3(1f, 0.1f, 1.5f); //TODO: get extents from item collider? 
+        var aabbExtentsMag = aabbExtents.magnitude;
+
+        const int maxTries = 20;
+        var tries = 0;
+        var spawnPos = targetPos;
+        var isSpawnObstructed = false;
+        do
+        {
+            var startPos = spawnPos + RaycastStartUpOffset;
+            isSpawnObstructed = Physics.BoxCast(startPos, aabbExtents, Vector3.down, Quaternion.identity, MaxRaycastDist, itemLayerMask);
+
+            Debug.DrawRay(startPos, Vector3.down * MaxRaycastDist, isSpawnObstructed ? Color.red : Color.green, 10f);
+
+            if (!isSpawnObstructed)
+            {
+                break;
+            }
+
+            tries++;
+            var tryPct = tries / (float)maxTries;
+            var dist = Random.Range(aabbExtentsMag, aabbExtentsMag * 5f) * tryPct;
+            var offset = Quaternion.Euler(0f, 360f * tryPct, 0f) * Vector3.forward * dist;
+            spawnPos = targetPos + offset;
+        }
+        while(isSpawnObstructed && tries < maxTries);
+
+        return spawnPos;
     }
 
     private void TryCraftAllItemContacts()

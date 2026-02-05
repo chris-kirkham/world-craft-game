@@ -65,7 +65,7 @@ public class IntroSequence : MonoBehaviour
 
         postIntroLighting.SetActive(true);
 
-        playerCam.SetMovementEnabled(true);
+        //playerCam.SetMovementEnabled(true);
     }
 
     private void OnDrawGizmos()

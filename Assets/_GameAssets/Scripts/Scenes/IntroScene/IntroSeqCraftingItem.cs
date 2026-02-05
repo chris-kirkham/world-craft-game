@@ -48,6 +48,11 @@ public class IntroSeqCraftingItem : MonoBehaviour, ICursorEventListener
 
     public void OnCursorEvent(Cursor.CursorEvent e)
     {
+        if(!enabled)
+        {
+            return;
+        }
+
         if(e == Cursor.CursorEvent.EnterElement)
         {
             isHovered = true;

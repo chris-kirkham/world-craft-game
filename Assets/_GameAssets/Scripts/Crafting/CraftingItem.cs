@@ -36,7 +36,6 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     public bool CanBeUsedInCraft => canBeUsedInCraft;
     private bool canBeUsedInCraft = true;
 
-
     public CraftingItemData Data 
     {
         get => itemData;
@@ -74,6 +73,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         if (dragHandler)
         {
             dragHandler.DragStarted += OnDragStart;
+            dragHandler.DragEnded += OnDragEnd;
         }
     }
 
@@ -104,6 +104,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         if (dragHandler)
         {
             dragHandler.DragStarted -= OnDragStart;
+            dragHandler.DragEnded -= OnDragEnd;
         }
     }
 
@@ -262,7 +263,13 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
 
     private void OnDragStart()
     {
+        SetCollisionEnabled(false);
         SetPartialCraftVFX(false);
+    }
+
+    private void OnDragEnd()
+    {
+        SetCollisionEnabled(true);
     }
 
     //called when this item is first crafted
@@ -270,8 +277,8 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     {
         OnCraftedVFX();
 
-        SetCollisionEnabled(false);
-        StartCoroutine(SetCollisionEnabledWithDelay(true, onCraftedCollisionEnableDelay));
+        //SetCollisionEnabled(false);
+        //StartCoroutine(SetCollisionEnabledWithDelay(true, onCraftedCollisionEnableDelay));
     }
 
     private void OnCraftedVFX()

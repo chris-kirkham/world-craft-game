@@ -138,7 +138,7 @@ MonoBehaviour:
   itemDatabase: {fileID: 11400000, guid: c44ec706574b99e46a02a0f04bd2cad9, type: 2}
   thumbnailPrefab: {fileID: 9176190644264876341, guid: 668d21fcae2ec3b4590f94b650ec3915, type: 3}
   windowPrefab: {fileID: 6500830298233221005, guid: 0fcedcac6452e4341b2b3b82bc8fc9f4, type: 3}
-  debugDisplay: {fileID: 0}
+  multiItemSpawnDelay: 0.2
   randomProducts:
   - {fileID: 11400000, guid: 299c2723918579e43af015a05132e2e1, type: 2}
   - {fileID: 11400000, guid: a5ecc6b4dca2d814fb3b56f35b0be370, type: 2}
@@ -149,6 +149,7 @@ MonoBehaviour:
   SpawnHelperIngredientsIfNoCraftPossible: 1
   helperSpawnMinTime: 1
   helperSpawnMaxTime: 10
+  debugDisplay: {fileID: 0}
 --- !u!114 &7400573137721866168
 MonoBehaviour:
   m_ObjectHideFlags: 0

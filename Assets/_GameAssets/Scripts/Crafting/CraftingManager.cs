@@ -310,7 +310,6 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
                 if (unusedIngredients[i].Data == prereqData || unusedIngredients[i].Data.Aliases.Contains(prereqData))
                 {
                     numMatching++;
-                    //Debug.Log($"Checked {prereqData.ItemName} against {unusedIngredients[i].Data}, num matching: {numMatching}");
                     unusedIngredients.RemoveAt(i);
                     break; //avoids matching two of the same ingredient to one of the same prerequisite
                 }
@@ -331,7 +330,6 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         var ingredientsList = new List<CraftingItem>(ingredients);
         var numIngredients = ingredients.Count;
 
-        //var centrePos = Cursor.Inst.Cam.ScreenToWorldPoint(new Vector3(Screen.width / 2f, Screen.height / 2f, 5f));
         var centrePos = Vector3.zero;
         foreach(var ingredient in ingredients)
         {
@@ -339,7 +337,6 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         }
         centrePos /= ingredients.Count;
 
-        const float startAngle = -90f; //starting angle offset so the first card is on the left rather than top
         var angleInc = 360f / ingredients.Count;
         var upInc = Vector3.up * 0.1f; //add a small vertical increment to each card to avoid z-fighting (and to look nice)
 
@@ -349,14 +346,14 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
             ingredient.TogglePhysics(false);
         }
 
-        //lerp ingredients to spin positions
+        //lerp ingredients to outer positions
         const float radius = 1f;
         var startPositions = new Vector3[numIngredients];
         var targetPositions = new Vector3[numIngredients];
         for (int i = 0; i < numIngredients; i++)
         {
             startPositions[i] = ingredientsList[i].transform.position + (upInc * i); 
-            targetPositions[i] = centrePos + (upInc * i) + (Quaternion.Euler(0f, (angleInc * i) + startAngle, 0f) * Vector3.forward * radius);
+            targetPositions[i] = centrePos + (upInc * i) + (Quaternion.Euler(0f, angleInc * i, 0f) * Vector3.left * radius);
         }
 
         const float lerpToOuterTime = 0.75f;
@@ -463,7 +460,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 
             tries++;
             var tryPct = tries / (float)maxTries;
-            var dist = Random.Range(aabbExtentsMag, aabbExtentsMag * 5f) * tryPct;
+            var dist = Random.Range(aabbExtentsMag, aabbExtentsMag * 4f) * tryPct;
             var offset = Quaternion.Euler(0f, 360f * tryPct, 0f) * Vector3.forward * dist;
             spawnPos = targetPos + offset;
         }
@@ -514,11 +511,6 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         var item = Instantiate<CraftingItem>(thumbnailPrefab, position, rotation);
         item.Data = itemData;
         item.OnCrafted();
-
-        /*
-        var window = Instantiate<CraftingItemWindow>(windowPrefab);
-        window.SetItem(itemData);
-        */
 
         return item;
     }

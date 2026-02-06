@@ -13,8 +13,7 @@ MonoBehaviour:
   m_Name: CraftData_Clay
   m_EditorClassIdentifier: 
   itemName: Clay
-  craftingAliases:
-  - {fileID: 11400000, guid: 33fbd6f9fc3345f4c842fd6e648b25e7, type: 2}
+  craftingAliases: []
   thumbnailTex: {fileID: 2800000, guid: 5533f2a680dcd5948b84e2e21c4dca9d, type: 3}
   contentPrefab: {fileID: 0}
   prerequisites:

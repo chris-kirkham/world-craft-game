@@ -15,7 +15,6 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
 
     [Header("UI")]
     [SerializeField] private RectTransform canvasRect;
-    [SerializeField] private RawImage thumbnailImage;
     [SerializeField] private Renderer image;
     [SerializeField] private Vector2Int itemSize = new Vector2Int(100, 100);
     [SerializeField] private RectTransform imageArea;
@@ -154,8 +153,12 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
                 gameObject.name = "Item_MissingItemData";
             }
 
-            thumbnailImage.texture = Resources.Load<Texture2D>("TX_Error_Sprite");
-
+            if(debugImageText)
+            {
+                debugImageText.text = "NO ITEM DATA";
+                debugImageText.gameObject.SetActive(true);
+            }
+            
             return;
         }
     
@@ -169,11 +172,8 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
                 imageMat.mainTexture = itemData.ThumbnailTex;
                 imageMat.SetTexture("_EmissionMap", itemData.ThumbnailTex);
                 image.gameObject.SetActive(true);
-                thumbnailImage.gameObject.SetActive(false);
             }
 
-            //thumbnailImage.gameObject.SetActive(true);
-            //thumbnailImage.texture = itemData.ThumbnailTex;
             if(debugImageText)
             {
                 debugImageText.gameObject.SetActive(false);
@@ -184,36 +184,12 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
             debugImageText.text = itemData.ItemName;
             debugImageText.gameObject.SetActive(true);
             image.gameObject.SetActive(false);
-            thumbnailImage.gameObject.SetActive(false);
         }
 
         if(canvasRect)
         {
             canvasRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, itemSize.x);
             canvasRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, itemSize.y);
-        }
-
-        if (thumbnailImage.texture)
-        {
-            //scale thumbnail image so its longest side matches canvas size, maintaining aspect ratio
-            var imageAreaWidth = imageArea.rect.width;
-            var imageAreaHeight = imageArea.rect.height;
-            var imageWidth = thumbnailImage.texture.width;
-            var imageHeight = thumbnailImage.texture.height;
-            var imageRect = thumbnailImage.rectTransform;
-            //if (imageWidth > imageHeight) //fit entire image in
-            if (imageHeight > imageWidth) //scale image up so smallest side fills image area (needs mask)
-            {
-                var scale = imageAreaWidth / (float)imageWidth;
-                imageRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, imageAreaWidth);
-                imageRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, imageHeight * scale);
-            }
-            else
-            {
-                var scale = imageAreaHeight / (float)imageHeight;
-                imageRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, imageWidth * scale);
-                imageRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, imageAreaHeight);
-            }
         }
     }
 

@@ -38,7 +38,10 @@ public class IntroSeqCraftingItem : MonoBehaviour, ICursorEventListener
             Cursor.Inst.RemoveCursorEventListener(this);
         }
 
-        onHoverText.PlayClipThenDisable();
+        if(onHoverText.gameObject.activeSelf)
+        {
+            onHoverText.PlayClipThenDisable();
+        }
     }
 
     private void OnSelected()

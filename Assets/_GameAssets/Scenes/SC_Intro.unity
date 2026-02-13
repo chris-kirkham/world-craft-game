@@ -143,6 +143,26 @@ PrefabInstance:
       propertyPath: m_Name
       value: P_CraftBoard
       objectReference: {fileID: 0}
+    - target: {fileID: 8868163458549237221, guid: 5c24d6d991c08a249a3d9101b965a35a, type: 3}
+      propertyPath: size.x
+      value: 19
+      objectReference: {fileID: 0}
+    - target: {fileID: 8868163458549237221, guid: 5c24d6d991c08a249a3d9101b965a35a, type: 3}
+      propertyPath: gridSize.x
+      value: 16
+      objectReference: {fileID: 0}
+    - target: {fileID: 8868163458549237221, guid: 5c24d6d991c08a249a3d9101b965a35a, type: 3}
+      propertyPath: gridSize.y
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8868163458549237221, guid: 5c24d6d991c08a249a3d9101b965a35a, type: 3}
+      propertyPath: gridCellSize.x
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8868163458549237221, guid: 5c24d6d991c08a249a3d9101b965a35a, type: 3}
+      propertyPath: gridCellSize.y
+      value: 1.5
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -239,6 +259,53 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 8082024096726127316, guid: 705de4f3a43ace240b89c44b19676d02, type: 3}
   m_PrefabInstance: {fileID: 663347875}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1660162861
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1660162863}
+  - component: {fileID: 1660162862}
+  m_Layer: 0
+  m_Name: ItemDeck
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1660162862
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1660162861}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c1bd948dde9af0429d90bfcf94e1ed2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  startingDeck: {fileID: 0}
+  itemHeight: 0.01
+  populateOnEnable: 1
+--- !u!4 &1660162863
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1660162861}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5, y: -2, z: -2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &3499391927089800388
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -295,3 +362,4 @@ SceneRoots:
   - {fileID: 663347875}
   - {fileID: 501896309}
   - {fileID: 3499391927089800388}
+  - {fileID: 1660162863}

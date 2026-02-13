@@ -13,9 +13,9 @@ public class DraggablePhysicsObject : DraggableElement
     private const int MaxRaycastHits = 20;
     private RaycastHit[] raycastHits = new RaycastHit[MaxRaycastHits];
 
-    protected override void Start()
+    protected override void OnEnable()
     {
-        base.Start();
+        base.OnEnable();
 
         if (!rb)
         {

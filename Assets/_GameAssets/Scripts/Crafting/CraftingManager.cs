@@ -72,7 +72,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
     [SerializeField] private float helperSpawnMinTime = 1f;
     [SerializeField] private float helperSpawnMaxTime = 10f;
     [Header("Debug")]
-    [SerializeField] private CraftingDebugDisplay debugDisplay;
+    [SerializeField] private DebugDisplay debugDisplay;
 
     private HashSet<CraftingItem> activeItems = new HashSet<CraftingItem>(); //list of all active crafting items currently on the board
 
@@ -130,7 +130,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 
         if (debugDisplay)
         {
-            debugDisplay.SetDebugInfo(itemContactGroups);
+            debugDisplay.SetCraftingDebugInfo(itemContactGroups);
         }
 
         TryCraftAllItemContacts();
@@ -307,6 +307,12 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         {
             for (int i = unusedIngredients.Count - 1; i >= 0; i--)
             {
+                //TODO: probably ingredients which are flagged as not to be used in crafts shouldn't even make it to this stage; refactor?
+                if (!unusedIngredients[i].CanCraft) 
+                {
+                    continue;
+                }
+                
                 if (unusedIngredients[i].Data == prereqData || unusedIngredients[i].Data.Aliases.Contains(prereqData))
                 {
                     numMatching++;
@@ -327,6 +333,12 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
             yield break;
         }
 
+        //turn ingredient physics/collision/input off
+        foreach (var ingredient in ingredients)
+        {
+            ingredient.SetState(CraftingItem.State.Animatable);
+        }
+
         var ingredientsList = new List<CraftingItem>(ingredients);
         var numIngredients = ingredients.Count;
 
@@ -339,12 +351,6 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 
         var angleInc = 360f / ingredients.Count;
         var upInc = Vector3.up * 0.1f; //add a small vertical increment to each card to avoid z-fighting (and to look nice)
-
-        //disable collision + make kinematic
-        foreach (var ingredient in ingredients)
-        {
-            ingredient.TogglePhysics(false);
-        }
 
         //lerp ingredients to outer positions
         const float radius = 1f;
@@ -416,7 +422,8 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
                 {
                     //spawn item
                     posOffset = Quaternion.Euler(0f, (angleInc * spawnCount) + newItemStartAngle, 0f) * newItemOffset;
-                    SpawnItem(product, centrePos + posOffset);
+                    var item = InstantiateItem(product, centrePos + posOffset);
+                    CraftingItemDeck.Inst?.AddItemToTopDeck(item);
                     spawnCount++;
                     Debug.Log($"Spawned extra product {product.ItemName} from craft result {result.ItemName}!");
 
@@ -434,7 +441,28 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
     private void SpawnItem(CraftingItemData itemData, Vector3 targetSpawnPos)
     {
         //instantiate item
-        var item = InstantiateItem(itemData, GetFreeSpawnPosition(targetSpawnPos));
+        //var item = InstantiateItem(itemData, GetFreeSpawnPosition(targetSpawnPos));
+        if(CrafterBoard.InstExists())
+        {
+            if(CrafterBoard.Inst.TryFindClosestFreeCell(targetSpawnPos, out var cell))
+            {
+                var pos = CrafterBoard.Inst.GetCellWorldPosFromCoord(cell.Coord);
+                pos = new Vector3(pos.x, targetSpawnPos.y, pos.z);
+                var item = InstantiateItem(itemData, pos);
+                cell.item = item;
+            }
+            else
+            {
+                Debug.LogWarning($"No free spaces found on board! Spawning item at target position of {targetSpawnPos}.");
+                InstantiateItem(itemData, targetSpawnPos);
+            }
+        }
+        else
+        {
+            Debug.LogError($"No instance of {nameof(CrafterBoard)} found!" +
+                $" Cannot determine free board position; spawning at target position of {targetSpawnPos}.");
+            InstantiateItem(itemData, targetSpawnPos);
+        }
     }
 
     private Vector3 GetFreeSpawnPosition(Vector3 targetPos)
@@ -442,16 +470,21 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         var aabbExtents = new Vector3(1f, 0.1f, 1.5f); //TODO: get extents from item collider? 
         var aabbExtentsMag = aabbExtents.magnitude;
 
-        const int maxTries = 20;
+        Debug.DrawRay(targetPos + RaycastStartUpOffset, Vector3.down * MaxRaycastDist, Color.yellow, 10f);
+
+        const int maxTries = 16;
         var tries = 0;
         var spawnPos = targetPos;
         var isSpawnObstructed = false;
         do
         {
             var startPos = spawnPos + RaycastStartUpOffset;
-            isSpawnObstructed = Physics.BoxCast(startPos, aabbExtents, Vector3.down, Quaternion.identity, MaxRaycastDist, itemLayerMask);
+            isSpawnObstructed = Physics.BoxCast(startPos, aabbExtents / 2f, Vector3.down, Quaternion.identity, MaxRaycastDist, itemLayerMask);
 
-            Debug.DrawRay(startPos, Vector3.down * MaxRaycastDist, isSpawnObstructed ? Color.red : Color.green, 10f);
+            if(tries > 0)
+            {
+                Debug.DrawRay(startPos, Vector3.down * MaxRaycastDist, isSpawnObstructed ? Color.red : Color.green, 10f);
+            }
 
             if (!isSpawnObstructed)
             {
@@ -459,9 +492,10 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
             }
 
             tries++;
+            const float maxSearchRadiusMult = 4f;
             var tryPct = tries / (float)maxTries;
-            var dist = Random.Range(aabbExtentsMag, aabbExtentsMag * 4f) * tryPct;
-            var offset = Quaternion.Euler(0f, 360f * tryPct, 0f) * Vector3.forward * dist;
+            var dist = aabbExtentsMag * maxSearchRadiusMult * tryPct;
+            var offset = Quaternion.Euler(0f, 720f * tryPct, 0f) * Vector3.forward * dist;
             spawnPos = targetPos + offset;
         }
         while(isSpawnObstructed && tries < maxTries);
@@ -477,14 +511,14 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         }
 
         var anySuccessfulCraft = false;
-        foreach (var ingredients in itemContactGroups)
+        foreach (var contactGroup in itemContactGroups)
         {
-            if(ingredients.items.Count < 2)
+            if(contactGroup.items.Count < 2)
             {
                 continue;
             }
 
-            var numResults = TryCraft(ingredients.items);
+            var numResults = TryCraft(contactGroup.items);
             for(int i = 0; i < numResults; i++)
             {
                 if (craftResultStates[i] == CraftingResultState.SuccessfulCraft)
@@ -501,16 +535,24 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         }
     }
 
-    public CraftingItem InstantiateItem(CraftingItemData itemData, Vector3 position)
+    /// <summary>Instantiate a crafting item directly</summary>
+    /// <param name="wasCrafted">if true, call the item's on-crafted callback</param>
+    public CraftingItem InstantiateItem(CraftingItemData itemData, Vector3 position, bool wasCrafted = true)
     {
         return InstantiateItem(itemData, position, Quaternion.identity);
     }
 
-    public CraftingItem InstantiateItem(CraftingItemData itemData, Vector3 position, Quaternion rotation)
+    /// <summary>Instantiate a crafting item directly</summary>
+    /// <param name="wasCrafted">if true, call the item's on-crafted callback</param>
+    public CraftingItem InstantiateItem(CraftingItemData itemData, Vector3 position, Quaternion rotation, bool wasCrafted = true)
     {
         var item = Instantiate<CraftingItem>(thumbnailPrefab, position, rotation);
         item.Data = itemData;
-        item.OnCrafted();
+
+        if(wasCrafted)
+        {
+            item.OnCrafted();
+        }
 
         return item;
     }

@@ -224,6 +224,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68a8a098525239d418524061b8d7561d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  DragStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  DragEnded:
+    m_PersistentCalls:
+      m_Calls: []
   canvas: {fileID: 5517956839668209307}
   handleRect: {fileID: 7673049695543603661}
   cursorOverride: {fileID: -4056669267574797703, guid: 1030702e92f623a40bb394cf6c6032ad, type: 3}
@@ -543,9 +549,7 @@ MonoBehaviour:
   onCraftedCollisionEnableDelay: 0.25
   dragHandler: {fileID: 7617850723740706044}
   canvasRect: {fileID: 0}
-  thumbnailImage: {fileID: 2057460480368453330}
   image: {fileID: 4753229391315967444}
-  itemSize: {x: 192, y: 256}
   imageArea: {fileID: 8254278603902409374}
   debugImageText: {fileID: 8143671448318490687}
   onCraftedVFX: {fileID: 1289895630832583794}
@@ -589,8 +593,38 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e42dbd31da74a814a80eaeac939793eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  DragStarted:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 4579748560507648321}
+        m_TargetAssemblyTypeName: UnityEngine.Behaviour, UnityEngine
+        m_MethodName: set_enabled
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
+        m_CallState: 2
+  DragEnded:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 4579748560507648321}
+        m_TargetAssemblyTypeName: UnityEngine.Behaviour, UnityEngine
+        m_MethodName: set_enabled
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   rb: {fileID: 437282539546797569}
-  coll: {fileID: 0}
+  coll: {fileID: 3457039273893812875}
   targetDistanceAboveGround: 1
   groundRaycastMask:
     serializedVersion: 2
@@ -628,6 +662,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 0.05}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 6093431204162113754}
   - {fileID: 6272421345604384507}
   - {fileID: 5258968018554915107}
   - {fileID: 8254278603902409374}
@@ -706,7 +741,7 @@ MonoBehaviour:
   useLocalRotation: 1
   useParentTransformAsPivot: 1
   pivotTransform: {fileID: 7443485276598698092}
-  rampUpOnEnable: 1
+  rampUpOnEnable: 0
   rampTime: 0.5
   rampCurve:
     serializedVersion: 2
@@ -859,12 +894,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5659229158852379109}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 0, y: -0.10000006, z: 0}
-  m_LocalScale: {x: 1, y: 1.2499998, z: 0.05}
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: -0.00000035762784}
+  m_LocalPosition: {x: 0, y: -0.10000009, z: 0.29999998}
+  m_LocalScale: {x: 1, y: 1.2499998, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 7724005026711412837}
+  m_Father: {fileID: 6909488610574980344}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!65 &3457039273893812875
 BoxCollider:
@@ -1276,7 +1311,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2481792133529047464}
-  - {fileID: 6093431204162113754}
   - {fileID: 6909488610574980344}
   - {fileID: 4295055858478897716}
   - {fileID: 7673049695543603661}

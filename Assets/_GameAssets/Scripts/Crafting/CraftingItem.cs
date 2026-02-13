@@ -7,16 +7,28 @@ using UnityEngine.UI;
 [System.Serializable]
 public class CraftingItem : MonoBehaviour, ICursorEventListener
 {
+    /// <summary>
+    /// Animatable = crafting OFF, input OFF, kinematic rb, collision OFF
+    /// Inert = crafting OFF, input OFF, non-kinematic rb, collision ON
+    /// Draggable = crafting OFF, input ON, kinematic rb, collision OFF
+    /// Active = crafting ON, input ON, non-kinematic rb, collision ON
+    /// </summary>
+    public enum State
+    {
+        Animatable,
+        Inert, 
+        Draggable,
+        Active
+    }
+
     [SerializeField] private CraftingItemData itemData;
     [SerializeField] private Rigidbody rb;
     [SerializeField] private Collider coll;
-    [SerializeField] private float onCraftedCollisionEnableDelay = 0.5f;
     [SerializeField] private DraggableElement dragHandler;
 
     [Header("UI")]
     [SerializeField] private RectTransform canvasRect;
     [SerializeField] private Renderer image;
-    [SerializeField] private Vector2Int itemSize = new Vector2Int(100, 100);
     [SerializeField] private RectTransform imageArea;
     [SerializeField] private TextMeshProUGUI debugImageText; //debug text for when image is missing
 
@@ -25,15 +37,11 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     [SerializeField] private GameObject craftingPotentialVFX;
 
     private Material imageMat;
-    
     private bool acceptInput = true;
-    private bool isHovered;
-    
-    public HashSet<CraftingItem> TouchingItems => touchingItems;
-    private HashSet<CraftingItem> touchingItems;
-
-    public bool CanBeUsedInCraft => canBeUsedInCraft;
     private bool canBeUsedInCraft = true;
+    private bool isHovered;
+    private bool isDragging;
+    private HashSet<CraftingItem> touchingItems;
 
     public CraftingItemData Data 
     {
@@ -43,12 +51,9 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
             itemData = value;
             UpdateData();
         } 
-    } 
-
-    private void OnValidate()
-    {
-        //UpdateData();
     }
+
+    public bool CanCraft => canBeUsedInCraft;
 
     private void OnEnable()
     {
@@ -58,6 +63,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         }
 
         SetAcceptInput(true);
+        SetCanBeUsedInCraft(true);
         UpdateData();
 
         touchingItems = new HashSet<CraftingItem>();
@@ -65,14 +71,13 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
 
         if(craftingPotentialVFX)
         {
-            //TODO: check for crafting potential on enable?
             craftingPotentialVFX.SetActive(false);
         }
 
         if (dragHandler)
         {
-            dragHandler.DragStarted += OnDragStart;
-            dragHandler.DragEnded += OnDragEnd;
+            dragHandler.DragStarted.AddListener(OnDragStart);
+            dragHandler.DragEnded.AddListener(OnDragEnd);
         }
     }
 
@@ -102,15 +107,20 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
 
         if (dragHandler)
         {
-            dragHandler.DragStarted -= OnDragStart;
-            dragHandler.DragEnded -= OnDragEnd;
+            dragHandler.DragStarted.RemoveListener(OnDragStart);
+            dragHandler.DragEnded.RemoveListener(OnDragEnd);
         }
     }
 
     private void OnTriggerEnter(Collider other)
     {
+        if(!canBeUsedInCraft)
+        {
+            return;
+        }
+
         var otherItem = other.GetComponentInParent<CraftingItem>();
-        if(otherItem && !touchingItems.Contains(otherItem))
+        if(otherItem && !touchingItems.Contains(otherItem) && otherItem.canBeUsedInCraft)
         {
             OnNewItemContact(otherItem);
         }
@@ -185,12 +195,6 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
             debugImageText.gameObject.SetActive(true);
             image.gameObject.SetActive(false);
         }
-
-        if(canvasRect)
-        {
-            canvasRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, itemSize.x);
-            canvasRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, itemSize.y);
-        }
     }
 
     private void OpenItem()
@@ -205,47 +209,22 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         Destroy(this.gameObject);
     }
 
-    //accept or block user input (e.g. for when animating item)
-    private void SetAcceptInput(bool acceptInput)
+    public void TryForceDragStart()
     {
-        this.acceptInput = acceptInput;
-        if(!acceptInput) //necessary?
-        {
-            isHovered = false;
-        }
-    }
-
-    public void SetCanBeUsedInCraft(bool enabled)
-    {
-        canBeUsedInCraft = enabled;
-    }
-
-    public void OnCursorEvent(Cursor.CursorEvent e)
-    {
-        if(!acceptInput)
-        {
-            return;
-        }
-        
-        if(e == Cursor.CursorEvent.EnterElement)
-        {
-            isHovered = true;
-        }
-        else if(e == Cursor.CursorEvent.ExitElement)
-        {
-            isHovered = false;
-        }
+        dragHandler.TryStartDrag();
     }
 
     private void OnDragStart()
     {
         SetCollisionEnabled(false);
         SetPartialCraftVFX(false);
+        isDragging = true;
     }
 
     private void OnDragEnd()
     {
         SetCollisionEnabled(true);
+        isDragging = false;
     }
 
     //called when this item is first crafted
@@ -293,7 +272,18 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     {
         SetPartialCraftVFX(false);
         SetCollisionEnabled(false);
-        Destroy(gameObject);
+        if(CraftingItemDeck.InstExists())
+        {
+            CraftingItemDeck.Inst.AddItemToBottomDeck(this);
+        }
+        //Destroy(gameObject);
+    }
+
+    public void SetState(State state)
+    {
+        SetPhysAndCollision(state == State.Inert || state == State.Active);
+        SetCanBeUsedInCraft(state == State.Active);
+        SetAcceptInput(state == State.Draggable || state == State.Active);
     }
 
     private void SetCollisionEnabled(bool enabled)
@@ -308,15 +298,36 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         }
     }
 
-    private IEnumerator SetCollisionEnabledWithDelay(bool enabled, float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        SetCollisionEnabled(enabled);
-    }
-
-    public void TogglePhysics(bool enabled)
+    private void SetPhysAndCollision(bool enabled)
     {
         rb.isKinematic = !enabled;
         coll.enabled = enabled;
+    }
+
+    private void SetAcceptInput(bool acceptInput)
+    {
+        this.acceptInput = acceptInput;
+        dragHandler.enabled = acceptInput;
+    }
+
+    private void SetCanBeUsedInCraft(bool enabled)
+    {
+        canBeUsedInCraft = enabled;
+    }
+
+    public void OnCursorEvent(Cursor.CursorEvent e)
+    {
+        if (e == Cursor.CursorEvent.EnterElement)
+        {
+            isHovered = true;
+        }
+        else if (e == Cursor.CursorEvent.ExitElement)
+        {
+            isHovered = false;
+        }
+        else if (e == Cursor.CursorEvent.RightClickDown)
+        {
+            //inspect item while holding right-click?
+        }
     }
 }

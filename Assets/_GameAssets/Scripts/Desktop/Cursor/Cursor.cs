@@ -39,6 +39,8 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
     [SerializeField] private PixelPerfectCamera pixelPerfectCamera;
     [SerializeField] private Image cursorImage;
     [SerializeField, FormerlySerializedAs("defaultCursorSprite")] private Sprite defaultSprite;
+    [Space]
+    [SerializeField] private DebugDisplay debugDisplay;
 
     private Camera cam;
 
@@ -46,7 +48,7 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
     private EventSystem eventSystem;
     private PointerEventData pointerEventData;
     private List<RaycastResult> raycastResults = new List<RaycastResult>();
-    private const int MaxRaycastHits = 50;
+    private const int MaxRaycastHits = 100;
     private const float MaxRaycastDist = 100f;
     private RaycastHit[] raycastHits = new RaycastHit[MaxRaycastHits];
     private ICursorEventListener[] listenerRaycastHits = new ICursorEventListener[MaxRaycastHits];
@@ -62,7 +64,9 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
     //private bool[] mouseButtonsPressedLastTick = new bool[3]; //0 = left, 1 = right, 2 = middle
 
     private HashSet<ICursorEventListener> trackedListeners = new HashSet<ICursorEventListener>(); //event listeners
-    //listeners flagged to be removed at the end of a frame (to avoid collection modification during a frame and messing other things up) (probably a better way to do this)
+    //listeners flagged to add/remove at the end of a frame
+    //- to avoid any modifications to the tracked listeners set caused by input events sent while looping over the set
+    private HashSet<ICursorEventListener> listenersToAdd = new HashSet<ICursorEventListener>(); 
     private HashSet<ICursorEventListener> listenersToRemove = new HashSet<ICursorEventListener>(); 
     private List<ICursorEventListener> hoveredListeners = new List<ICursorEventListener>(); //event listeners the cursor is currently on top of
     private List<SpriteOverride> spriteOverrides = new List<SpriteOverride>();
@@ -82,10 +86,10 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
 
     public Camera Cam => cam;
 
-    //TODO: refactor into some kind of drag manager if drags get complex OR if we can have multiple simultaneous elements being dragged
-    //- don't just let anyone set the drag target?
+    private HashSet<DraggableElement> dragRequests = new HashSet<DraggableElement>();
     public DraggableElement CurrentDragTarget { get; set; } 
     
+
     private void OnEnable()
     {
         cam = pixelPerfectCamera.GetComponent<Camera>();
@@ -106,12 +110,18 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
             int i = 0;
             while(e < (int)CursorEvent.MAX)
             {
-                cursorEventsThisTickLog += (CursorEvent)e + ", ";
+                if((e & currentEventFlags) > 0)
+                {
+                    cursorEventsThisTickLog += ((CursorEvent)e).ToString() + ", ";
+                }
 
                 e = 1 << i;
                 i++;
             }
+        
+            Debug.Log(cursorEventsThisTickLog);
         }
+
     }
 
     private void LateUpdate()
@@ -121,7 +131,16 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
         prevRawMousePosition = rawMousePosition;
         prevClampedMousePos_WS = ClampedPosition_WS;
 
+        AddFlaggedCursorEventListeners();
         RemoveFlaggedCursorEventListeners();
+
+        //N.B. only update drag target at end of frame to allow other scripts to use current drag target before then
+        UpdateDragTarget();
+
+        if(debugDisplay)
+        {
+            debugDisplay.SetCursorDebugInfo(this, dragRequests);
+        }
     }
 
     //TODO: refactor and make more efficient! probably don't need both physics and UI (event system) raycasts?
@@ -155,6 +174,12 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
             }
 
             listenerHitCount += FindHitListeners(result.gameObject);
+        }
+
+        if(listenerHitCount >= MaxRaycastHits - 1)
+        {
+            Debug.LogWarning($"Hit listener count exceeds size of raycast hit buffer! Some hits will not be registered.");
+            listenerHitCount = MaxRaycastHits - 1;
         }
 
         //check for elements the mouse is no longer hovering over
@@ -284,18 +309,22 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
 
     public void AddCursorEventListener(ICursorEventListener listener)
     {
-        if(!trackedListeners.Contains(listener))
-        {
-            trackedListeners.Add(listener);
-            //Debug.Log($"Adding cursor event listener {listener.ToString()};" +
-            //    $" tracked listener listener count: {trackedListeners.Count}");
-        }
+        listenersToAdd.Add(listener);
     }
 
     public void RemoveCursorEventListener(ICursorEventListener listener)
     {
-        //Debug.Log($"Removing cursor event listener {listener.ToString()}; new listener count: {trackedListeners.Count - 1}");
         listenersToRemove.Add(listener);
+    }
+
+    private void AddFlaggedCursorEventListeners()
+    {
+        foreach (var listener in listenersToAdd)
+        {
+            trackedListeners.Add(listener);
+        }
+
+        listenersToAdd.Clear();
     }
 
     private void RemoveFlaggedCursorEventListeners()
@@ -330,6 +359,63 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
     {
         return (currentEventFlags & 1 << (int)e) > 0;
     }
+
+    public void AddToDragList(DraggableElement draggable)
+    {
+        dragRequests.Add(draggable);
+    }
+
+    public void RemoveFromDragList(DraggableElement draggable)
+    {
+        dragRequests.Remove(draggable);
+    }
+
+    private void UpdateDragTarget()
+    {
+        if(CurrentDragTarget)
+        {
+            //if we're already dragging something in the drag list, keep dragging that
+            if (dragRequests.Contains(CurrentDragTarget)) 
+            {
+                return;
+            }
+            else //if current drag target was removed from the drag list, end that drag
+            {
+                CurrentDragTarget.EndDrag();
+                CurrentDragTarget = null;
+            }
+        }
+
+        if(dragRequests.Count == 0)
+        {
+            return;
+        }
+
+        //find best drag option by y distance to camera - TODO: think of a smarter way to do this
+        DraggableElement closestDraggable = null;
+        var minDist = Mathf.Infinity;
+        foreach(var draggable in dragRequests)
+        {
+            if(!draggable)
+            {
+                continue;
+            }
+
+            var dist = Mathf.Abs(draggable.transform.position.y - cam.transform.position.y);
+            if(dist < minDist)
+            {
+                closestDraggable = draggable;
+                minDist = dist;
+            }
+        }
+
+        if(closestDraggable)
+        {
+            CurrentDragTarget = closestDraggable;
+            CurrentDragTarget.StartDrag();
+        }
+    }
+
 
     private void OnDrawGizmos()
     {

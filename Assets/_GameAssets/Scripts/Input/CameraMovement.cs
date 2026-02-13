@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering.Universal;
@@ -7,7 +8,6 @@ public class CameraMovement : MonoBehaviour, ICursorEventListener
     [SerializeField] private Camera cam;
     [SerializeField] private float minZoom = 0.1f;
     [SerializeField] private float maxZoom = 10f;
-    [SerializeField] private float defaultZoom = 1f;
     [SerializeField] private float zoomSpeed = 10f;
     [SerializeField] private Vector3 viewCentre;
     [SerializeField] private Vector3 viewSize;
@@ -68,7 +68,7 @@ public class CameraMovement : MonoBehaviour, ICursorEventListener
         
         ClampCameraPos();
         
-        if(!Cursor.Inst.IsRightClickPressed)
+        if(!Cursor.InstExists() || !Cursor.Inst.IsRightClickPressed)
         {
             SetDragging(false);
         }
@@ -89,7 +89,10 @@ public class CameraMovement : MonoBehaviour, ICursorEventListener
     private void SetDragging(bool dragging)
     {
         isDragging = dragging;
-        Cursor.Inst.FreezeCursorPos(dragging);
+        if(Cursor.InstExists())
+        {
+            Cursor.Inst.FreezeCursorPos(dragging);
+        }
     }
 
     private void UpdatePan()

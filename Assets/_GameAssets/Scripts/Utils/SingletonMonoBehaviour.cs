@@ -13,7 +13,7 @@ public abstract class SingletonMonoBehaviour<T> : MonoBehaviour where T : MonoBe
                 return _inst;
             }
 
-            Debug.LogErrorFormat($"No instance of {0} found!", nameof(T));
+            Debug.LogError($"No instance of {typeof(T).Name} found!");
             return null;
         }
     }
@@ -22,7 +22,7 @@ public abstract class SingletonMonoBehaviour<T> : MonoBehaviour where T : MonoBe
     {
         if (_inst)
         {
-            Debug.LogWarningFormat($"Instance of {0} already exists! Destroying this instance.", nameof(T));
+            Debug.LogWarning($"Instance of {typeof(T).Name} already exists! Destroying this instance.");
             Destroy(gameObject);
         }
         else

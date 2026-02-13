@@ -1,8 +1,9 @@
 using System;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.Serialization;
 
-//base class for click-and-draggable UI items
+//base class for click-and-draggable items
 public abstract class DraggableElement : MonoBehaviour, ICursorEventListener
 {
     protected bool isHovered;
@@ -12,10 +13,10 @@ public abstract class DraggableElement : MonoBehaviour, ICursorEventListener
 
     protected Cursor.SpriteOverride cursorSpriteOverride;
 
-    public event Action DragStarted;
-    public event Action DragEnded;
+    public UnityEvent DragStarted;
+    public UnityEvent DragEnded;
 
-    protected virtual void Start()
+    protected virtual void OnEnable()
     {
         cursorSpriteOverride = new Cursor.SpriteOverride()
         {
@@ -38,38 +39,54 @@ public abstract class DraggableElement : MonoBehaviour, ICursorEventListener
         {
             Cursor.Inst.RemoveCursorEventListener(this);
         }
-        else
-        {
-            Debug.LogError($"Instance of {nameof(Cursor)} not found!");
-        }
+
+        BreakDrag();
+        DragStarted.RemoveAllListeners();
+        DragEnded.RemoveAllListeners();
     }
 
-    private void LateUpdate()
+    public void StartDrag()
     {
-        //N.B. only remove as drag target at end of frame to allow other scripts to use it before then
-        if(!isDragging && Cursor.Inst.CurrentDragTarget == this)
+        if(isDragging) //skip if already dragging
         {
-            Cursor.Inst.CurrentDragTarget = null;
+            return;
         }
-    }
 
-    private void StartDrag()
-    {
         isDragging = true;
-        Cursor.Inst.CurrentDragTarget = this;
         OnStartDrag();
         DragStarted?.Invoke();
     }
 
-    private void EndDrag()
+    public void EndDrag()
     {
-        isDragging = false;
-        OnEndDrag();
-        DragEnded?.Invoke();
-
         if (!isHovered)
         {
             Cursor.Inst.RemoveSpriteOverride(cursorSpriteOverride);
+        }
+
+        if (!isDragging)
+        {
+            return;
+        }
+
+        isDragging = false;
+        OnEndDrag();
+        DragEnded?.Invoke();
+    }
+
+    public void TryStartDrag()
+    {
+        if(Cursor.InstExists())
+        {
+            Cursor.Inst.AddToDragList(this);
+        }
+    }
+
+    public void BreakDrag()
+    {
+        if(Cursor.InstExists())
+        {
+            Cursor.Inst.RemoveFromDragList(this);
         }
     }
 
@@ -101,13 +118,13 @@ public abstract class DraggableElement : MonoBehaviour, ICursorEventListener
                 }
                 break;
             case Cursor.CursorEvent.LeftClickDown:
-                if(isHovered && !Cursor.Inst.CurrentDragTarget) //if element hovered and not currently dragging something
+                if(isHovered)
                 {
-                    StartDrag();
+                    TryStartDrag();
                 }
                 break;
             case Cursor.CursorEvent.LeftClickUp:
-                EndDrag();
+                BreakDrag();
                 break;
             default:
                 break;

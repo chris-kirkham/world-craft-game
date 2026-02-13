@@ -6,9 +6,9 @@ public class DraggableUIElement : DraggableElement
     [SerializeField] protected Canvas canvas;
     [SerializeField] protected RectTransform handleRect;
 
-    protected override void Start()
+    protected override void OnEnable()
     {
-        base.Start();
+        base.OnEnable();
 
         if (canvas)
         {

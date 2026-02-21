@@ -10,14 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64da08f90a4e74a41ae61ff1dccf769c, type: 3}
-  m_Name: CraftData_Fire
+  m_Name: CraftData_Lightning
   m_EditorClassIdentifier: 
-  itemName: Fire
+  itemName: Lightning
   craftingAliases: []
-  thumbnailTex: {fileID: 2800000, guid: b37e0709c6c95c54a9f04bf7f24554b8, type: 3}
+  thumbnailTex: {fileID: 2800000, guid: 3940234b1c0d3744f92773002868c30f, type: 3}
   contentPrefab: {fileID: 0}
   prerequisites:
-  - {fileID: 11400000, guid: 25ca6142a6502e1418ee00635392d6b9, type: 2}
-  - {fileID: 11400000, guid: 1ca7b59dbd465e84ba139394ce1d1478, type: 2}
-  products:
-  - {fileID: 11400000, guid: c6ddf3c03eeddc8448ae41fef5ff0bf0, type: 2}
+  - {fileID: 11400000, guid: 2be091212d8dfc24bac46b5517798562, type: 2}
+  - {fileID: 11400000, guid: 299c2723918579e43af015a05132e2e1, type: 2}
+  products: []

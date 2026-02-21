@@ -37,14 +37,6 @@ public class IntroSequence : MonoBehaviour
         }
     }
 
-    private void OnDisable()
-    {
-        if(playerCam)
-        {
-            playerCam.SetMovementEnabled(true);
-        }
-    }
-
     public void OnChooseItem(CraftingItem item)
     {
         playableDirector.Stop();
@@ -64,8 +56,8 @@ public class IntroSequence : MonoBehaviour
         topText.PlayClipThenDisable();
 
         postIntroLighting.SetActive(true);
-
-        //playerCam.SetMovementEnabled(true);
+        playerCam.SetMovementEnabled(true);
+        enabled = false;
     }
 
     private void OnDrawGizmos()

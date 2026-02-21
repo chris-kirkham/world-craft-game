@@ -72,7 +72,6 @@ public class CrafterBoard : SingletonMonoBehaviour<CrafterBoard>
                 {
                     if (!grid[x, y].item)
                     {
-                        Debug.Log($"({x},{y})");
                         cell = grid[x, y];
                         return true;
                     }

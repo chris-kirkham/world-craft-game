@@ -16,11 +16,12 @@ public class PerlinFloat : MonoBehaviour
     [SerializeField] private bool rampUpOnEnable;
     [SerializeField, Min(0.01f)] private float rampTime;
     [SerializeField] private AnimationCurve rampCurve;
+    [SerializeField] private bool resetOnDisable = true;
     [Space]
     [SerializeField] private float positionSeed;
     [SerializeField] private float rotationSeed;
     [SerializeField] private bool setRandomSeedsOnEnable = true;
-
+ 
     private Vector3 initialPos;
     private Quaternion initialRotation;
 
@@ -40,6 +41,23 @@ public class PerlinFloat : MonoBehaviour
     
         UpdateRestingPosition(transform.position);
         UpdateRestingRotation(transform.rotation);
+    }
+
+    private void OnDisable()
+    {
+        if(resetOnDisable)
+        {
+            if(useParentTransformAsPivot && pivotTransform)
+            {
+                transform.position = pivotTransform.position;
+                transform.rotation = pivotTransform.rotation;
+            }
+            else
+            {
+                transform.position = initialPos;
+                transform.rotation = initialRotation;
+            }
+        }
     }
 
     private void LateUpdate()

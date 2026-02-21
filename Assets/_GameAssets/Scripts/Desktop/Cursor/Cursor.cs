@@ -95,7 +95,7 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
         cam = pixelPerfectCamera.GetComponent<Camera>();
         eventSystem = FindFirstObjectByType<EventSystem>();
 
-        UnityEngine.Cursor.visible = false; //hide default cursor (TODO: look at using Cursor.SetCursor instead?)
+        //UnityEngine.Cursor.visible = false; //hide default cursor (TODO: look at using Cursor.SetCursor instead?)
     }
 
     private void Update()

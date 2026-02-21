@@ -421,7 +421,6 @@ MonoBehaviour:
   cam: {fileID: 8597685863066880409}
   minZoom: 0.1
   maxZoom: 10
-  defaultZoom: 1
   zoomSpeed: 0.1
   viewCentre: {x: 0, y: 2, z: 0}
   viewSize: {x: 20, y: 7, z: 15}

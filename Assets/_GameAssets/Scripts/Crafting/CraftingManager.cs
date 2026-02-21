@@ -8,7 +8,10 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 {
     public class ItemContactsGroup
     {
-        public HashSet<CraftingItem> items;
+        private HashSet<CraftingItem> items;
+
+        public HashSet<CraftingItem> Items => items;
+        public int Count => items.Count;
 
         public ItemContactsGroup(HashSet<CraftingItem> items)
         {
@@ -74,7 +77,9 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
     [Header("Debug")]
     [SerializeField] private DebugDisplay debugDisplay;
 
+    //TODO: move this to a more generic ItemManager if keeping functionality
     private HashSet<CraftingItem> activeItems = new HashSet<CraftingItem>(); //list of all active crafting items currently on the board
+    public HashSet<CraftingItem> ActiveItems => activeItems;
 
     //cached lists of stuff
     private List<CraftingItem> unusedIngredients = new List<CraftingItem>(); //unused ingredients during each craft attempt
@@ -117,22 +122,12 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 
     private void LateUpdate()
     {
-        //update trimmed item contacts
-        //TODO: optimise
-        itemContactGroups.Clear();
-        foreach(var contacts in itemContactsDict.Values)
-        {
-            if(!itemContactGroups.Contains(contacts))
-            {
-                itemContactGroups.Add(contacts);
-            }
-        }
-
         if (debugDisplay)
         {
             debugDisplay.SetCraftingDebugInfo(itemContactGroups);
         }
 
+        UpdateTrimmedItemGroups();
         TryCraftAllItemContacts();
 
         if(CheckForPossibleCrafts())
@@ -151,8 +146,41 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         }
     }
 
+    private void UpdateTrimmedItemGroups()
+    {
+        itemContactGroups.Clear();
+        foreach(var keyItem in itemContactsDict.Keys)
+        {
+            var group = new HashSet<CraftingItem>() { keyItem };
+            ExpandItemGroup(group, itemContactsDict[keyItem].Items);
+            itemContactGroups.Add(new ItemContactsGroup(group));
+        }
+    
+        void ExpandItemGroup(HashSet<CraftingItem> existingGroup, HashSet<CraftingItem> newGroup)
+        {
+            if(newGroup != existingGroup)
+            {
+                var newItems = new HashSet<CraftingItem>(newGroup);
+                newItems.ExceptWith(existingGroup);
+                existingGroup.UnionWith(newGroup);
+                foreach (var item in newItems)
+                {
+                    if(itemContactsDict.TryGetValue(item, out var newItemContacts))
+                    {
+                        ExpandItemGroup(existingGroup, newItemContacts.Items);
+                    }
+                }
+            }
+        }
+    }
+
     public void AddItemContact(CraftingItem item, CraftingItem contactingItem)
     {
+        if(!item || !contactingItem)
+        {
+            return;
+        }
+
         if(itemContactsDict.TryGetValue(item, out var touchingItems))
         {
             if(!touchingItems.Contains(contactingItem))
@@ -164,36 +192,62 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         {
             itemContactsDict.Add(item, new ItemContactsGroup(new HashSet<CraftingItem> { item, contactingItem })); //item is always touching itself
         }
+
+        //UpdateTrimmedItemGroups();
     }
 
     public void RemoveItemContact(CraftingItem item, CraftingItem contactingItem)
+    {
+        if(!item || !contactingItem)
+        {
+            return;
+        }
+
+        //remove other item from this item's contacts
+        if(itemContactsDict.TryGetValue(item, out var touchingThisItem) && touchingThisItem.Contains(contactingItem))
+        {
+            touchingThisItem.Remove(contactingItem);
+         
+            if(touchingThisItem.Count < 2) //delete if <2 since we always add the item itself to the touching items (TODO: this is jank)
+            {
+                itemContactsDict.Remove(item);
+            }
+        }
+
+        //remove this item from other item's contacts
+        if(itemContactsDict.TryGetValue(contactingItem, out var touchingOtherItem) && touchingOtherItem.Contains(item))
+        {
+            touchingOtherItem.Remove(contactingItem);
+
+            if (touchingOtherItem.Count < 2) 
+            {
+                itemContactsDict.Remove(contactingItem);
+            }
+        }
+
+        //UpdateTrimmedItemGroups();
+    }
+
+    public void RemoveAllItemContactsForItem(CraftingItem item)
     {
         if(!item)
         {
             return;
         }
 
-        if(itemContactsDict.TryGetValue(item, out var touchingItems))
+        if(itemContactsDict.TryGetValue(item, out var itemContacts))
         {
-            if(touchingItems.Contains(contactingItem))
+            itemContactsDict.Remove(item);
+            foreach(var contactingItem in itemContacts.Items)
             {
-                touchingItems.Remove(contactingItem);
-         
-                //if(touchingItems.Count == 0)
-                if(touchingItems.items.Count < 2) //delete if <2 since we always add the item itself to the touching items (TODO: this is jank)
+                if(itemContactsDict.TryGetValue(contactingItem, out var otherItemContacts))
                 {
-                    itemContactsDict.Remove(item);
+                    otherItemContacts.Remove(item);
                 }
             }
-            else
-            {
-                Debug.LogError($"No item {contactingItem.name} found in contacts list for item {item.name}!");
-            }
         }
-        else
-        {
-            Debug.LogError($"No key for item {item.name} found in contacts dictionary!");
-        }
+
+        //UpdateTrimmedItemGroups();
     }
 
     private int TryCraft(HashSet<CraftingItem> ingredients)
@@ -513,12 +567,12 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         var anySuccessfulCraft = false;
         foreach (var contactGroup in itemContactGroups)
         {
-            if(contactGroup.items.Count < 2)
+            if(contactGroup.Count < 2)
             {
                 continue;
             }
 
-            var numResults = TryCraft(contactGroup.items);
+            var numResults = TryCraft(contactGroup.Items);
             for(int i = 0; i < numResults; i++)
             {
                 if (craftResultStates[i] == CraftingResultState.SuccessfulCraft)
@@ -649,7 +703,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
             {
                 contactPositions.Clear();
                 Gizmos.color = Color.HSVToRGB(hue, 1f, 1f);
-                foreach (var contact in contactGroup.items)
+                foreach (var contact in contactGroup.Items)
                 {
                     Gizmos.DrawSphere(contact.transform.position, 0.1f);
                     contactPositions.Add(contact.transform.position);

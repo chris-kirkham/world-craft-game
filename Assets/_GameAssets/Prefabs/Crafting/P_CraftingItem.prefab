@@ -546,7 +546,6 @@ MonoBehaviour:
   itemData: {fileID: 0}
   rb: {fileID: 437282539546797569}
   coll: {fileID: 3457039273893812875}
-  onCraftedCollisionEnableDelay: 0.25
   dragHandler: {fileID: 7617850723740706044}
   canvasRect: {fileID: 0}
   image: {fileID: 4753229391315967444}
@@ -740,7 +739,7 @@ MonoBehaviour:
   useLocalPosition: 1
   useLocalRotation: 1
   useParentTransformAsPivot: 1
-  pivotTransform: {fileID: 7443485276598698092}
+  pivotTransform: {fileID: 7724005026711412837}
   rampUpOnEnable: 0
   rampTime: 0.5
   rampCurve:
@@ -770,6 +769,7 @@ MonoBehaviour:
   positionSeed: 0
   rotationSeed: 0
   setRandomSeedsOnEnable: 1
+  resetTransformOnDisable: 1
 --- !u!1 &5467475274180957427
 GameObject:
   m_ObjectHideFlags: 0

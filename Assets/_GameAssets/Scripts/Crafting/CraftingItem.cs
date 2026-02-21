@@ -41,7 +41,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     private bool canBeUsedInCraft = true;
     private bool isHovered;
     private bool isDragging;
-    private HashSet<CraftingItem> touchingItems;
+    private bool isTouchingOtherItems;
 
     public CraftingItemData Data 
     {
@@ -62,12 +62,17 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
             CraftingManager.Inst.RegisterCraftingItem(this);
         }
 
-        SetAcceptInput(true);
-        SetCanBeUsedInCraft(true);
-        UpdateData();
+        if (Cursor.InstExists())
+        {
+            Cursor.Inst.AddCursorEventListener(this);
+        }
+        else
+        {
+            Debug.LogError($"Instance of {nameof(Cursor)} not found!");
+        }
 
-        touchingItems = new HashSet<CraftingItem>();
-        touchingItems.Add(this); //an item is always touching itself
+        SetState(State.Active);
+        UpdateData();
 
         if(craftingPotentialVFX)
         {
@@ -78,18 +83,6 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         {
             dragHandler.DragStarted.AddListener(OnDragStart);
             dragHandler.DragEnded.AddListener(OnDragEnd);
-        }
-    }
-
-    private void Start()
-    {
-        if (Cursor.InstExists())
-        {
-            Cursor.Inst.AddCursorEventListener(this);
-        }
-        else
-        {
-            Debug.LogError($"Instance of {nameof(Cursor)} not found!");
         }
     }
 
@@ -110,6 +103,8 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
             dragHandler.DragStarted.RemoveListener(OnDragStart);
             dragHandler.DragEnded.RemoveListener(OnDragEnd);
         }
+
+        RemoveAllItemContacts();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -120,36 +115,47 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         }
 
         var otherItem = other.GetComponentInParent<CraftingItem>();
-        if(otherItem && !touchingItems.Contains(otherItem) && otherItem.canBeUsedInCraft)
+        if(otherItem && otherItem.canBeUsedInCraft)
         {
-            OnNewItemContact(otherItem);
+            AddItemContact(otherItem);
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
         var otherItem = other.gameObject.GetComponentInParent<CraftingItem>();
-        if (otherItem && touchingItems.Contains(otherItem))
+        if (otherItem)
         {
-            OnLostItemContact(otherItem);
+            RemoveItemContact(otherItem);
         }
     }
 
-    private void OnNewItemContact(CraftingItem item)
+    private void AddItemContact(CraftingItem item)
     {
-        CraftingManager.Inst.AddItemContact(this, item);
-
-        touchingItems.Add(item);
+        if(CraftingManager.InstExists())
+        {
+            CraftingManager.Inst.AddItemContact(this, item);
+        }
     }
 
-    private void OnLostItemContact(CraftingItem item)
+    private void RemoveItemContact(CraftingItem item)
     {
-        CraftingManager.Inst.RemoveItemContact(this, item);
+        if(CraftingManager.InstExists())
+        {
+            CraftingManager.Inst.RemoveItemContact(this, item);
+        }
 
-        touchingItems.Remove(item);
-        if(touchingItems.Count < 2)
+        if(!isTouchingOtherItems) //TODO: add this functionality back in
         {
             SetPartialCraftVFX(false);
+        }
+    }
+
+    private void RemoveAllItemContacts()
+    {
+        if(CraftingManager.InstExists())
+        {
+            CraftingManager.Inst.RemoveAllItemContactsForItem(this);
         }
     }
 
@@ -173,6 +179,24 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         }
     
         gameObject.name = "Item_" + itemData.ItemName;
+
+        if(CraftingManager.InstExists())
+        {
+            var itemsInPlay = CraftingManager.Inst.ActiveItems;
+            int sameItemCount = 0;
+            foreach(var item in itemsInPlay)
+            {
+                if (item.itemData == itemData)
+                {
+                    sameItemCount++;
+                }
+            }
+
+            if(sameItemCount > 0)
+            {
+                gameObject.name += $" ({sameItemCount})";
+            }
+        }
 
         if(image && itemData.ThumbnailTex && Application.isPlaying) //don't get material instance + default to text if not playing
         {
@@ -291,6 +315,11 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         if(coll)
         {
             coll.enabled = enabled;
+
+            if(!enabled)
+            {
+                RemoveAllItemContacts();
+            }
         }
         else
         {
@@ -301,18 +330,28 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     private void SetPhysAndCollision(bool enabled)
     {
         rb.isKinematic = !enabled;
-        coll.enabled = enabled;
+        SetCollisionEnabled(enabled);
     }
 
     private void SetAcceptInput(bool acceptInput)
     {
         this.acceptInput = acceptInput;
         dragHandler.enabled = acceptInput;
+
+        if(!acceptInput)
+        {
+            RemoveAllItemContacts();
+        }
     }
 
     private void SetCanBeUsedInCraft(bool enabled)
     {
         canBeUsedInCraft = enabled;
+
+        if(!canBeUsedInCraft)
+        {
+            RemoveAllItemContacts();
+        }
     }
 
     public void OnCursorEvent(Cursor.CursorEvent e)

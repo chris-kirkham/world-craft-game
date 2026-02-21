@@ -29,7 +29,7 @@ public class DebugDisplay : MonoBehaviour
         foreach(var contactGroup in itemContacts)
         {
             craftingDebugInfo += "\n[";
-            foreach(var contact in contactGroup.items)
+            foreach(var contact in contactGroup.Items)
             {
                 craftingDebugInfo += contact.Data.ItemName + ", ";
             }

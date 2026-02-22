@@ -69,7 +69,9 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
     [SerializeField] private CraftingItemWindow windowPrefab;
     [Space]
     [SerializeField] private float multiItemSpawnDelay = 0.1f;
-    [Space]
+    [Header("Crafting zones")]
+    [SerializeField] private List<CrafterPlacementZone> placementPoints;
+    [SerializeField] private Transform craftingResultSpawnPos;
     [SerializeField] private List<CraftingItemData> randomProducts;
     [SerializeField] private bool SpawnHelperIngredientsIfNoCraftPossible = true;
     [SerializeField] private float helperSpawnMinTime = 1f;
@@ -92,6 +94,8 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
     private const float MaxRaycastDist = 20f;
     private readonly Vector3 RaycastStartUpOffset = Vector3.up * 10f;
 
+    private HashSet<CraftingItem> placedItems = new HashSet<CraftingItem>();
+
     //Dictionary of {ITEM : CONTACTS} where ITEM is the item which initially reported the contact.
     //Contains duplicates so all contacts can be found using any contacting item's key, e.g.
     //{WATER : [WATER, GROUND, BEACH]}
@@ -106,9 +110,21 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 
     private Coroutine spawnHelperItemCoroutine;
 
+    private void OnEnable()
+    {
+        foreach(var placementPoint in placementPoints)
+        {
+            placementPoint.ItemPlaced += OnItemPlaced;
+        }
+    }
+
     private void Start()
     {
-        Cursor.Inst.AddCursorEventListener(this);
+        if(Cursor.InstExists())
+        {
+            Cursor.Inst.AddCursorEventListener(this);
+        }
+
         itemLayerMask = LayerMask.GetMask("Item");
     }
 
@@ -117,6 +133,11 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         if(Cursor.InstExists())
         {
             Cursor.Inst.RemoveCursorEventListener(this);
+        }
+
+        foreach (var placementPoint in placementPoints)
+        {
+            placementPoint.ItemPlaced -= OnItemPlaced;
         }
     }
 
@@ -128,7 +149,6 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         }
 
         UpdateTrimmedItemGroups();
-        TryCraftAllItemContacts();
 
         if(CheckForPossibleCrafts())
         {
@@ -143,6 +163,15 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
             {
                 spawnHelperItemCoroutine = StartCoroutine(SpawnHelperItem());
             }
+        }
+    }
+
+    private void OnItemPlaced(CraftingItem item)
+    {
+        placedItems.Add(item);
+        if(placedItems.Count > 1)
+        {
+            TryCraft(placedItems);
         }
     }
 
@@ -397,11 +426,14 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         var numIngredients = ingredients.Count;
 
         var centrePos = Vector3.zero;
-        foreach(var ingredient in ingredients)
+        if(craftingResultSpawnPos)
         {
-            centrePos += ingredient.transform.position;
+            centrePos = craftingResultSpawnPos.position;
         }
-        centrePos /= ingredients.Count;
+        else
+        {
+            Debug.LogError($"No crafting result spawn position Transform set! Spawning at (0,0,0).");
+        }
 
         var angleInc = 360f / ingredients.Count;
         var upInc = Vector3.up * 0.1f; //add a small vertical increment to each card to avoid z-fighting (and to look nice)
@@ -477,7 +509,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
                     //spawn item
                     posOffset = Quaternion.Euler(0f, (angleInc * spawnCount) + newItemStartAngle, 0f) * newItemOffset;
                     var item = InstantiateItem(product, centrePos + posOffset);
-                    CraftingItemDeck.Inst?.AddItemToTopDeck(item);
+                    //CraftingItemDeck.Inst?.AddItemToTopDeck(item);
                     spawnCount++;
                     Debug.Log($"Spawned extra product {product.ItemName} from craft result {result.ItemName}!");
 
@@ -494,29 +526,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 
     private void SpawnItem(CraftingItemData itemData, Vector3 targetSpawnPos)
     {
-        //instantiate item
-        //var item = InstantiateItem(itemData, GetFreeSpawnPosition(targetSpawnPos));
-        if(CrafterBoard.InstExists())
-        {
-            if(CrafterBoard.Inst.TryFindClosestFreeCell(targetSpawnPos, out var cell))
-            {
-                var pos = CrafterBoard.Inst.GetCellWorldPosFromCoord(cell.Coord);
-                pos = new Vector3(pos.x, targetSpawnPos.y, pos.z);
-                var item = InstantiateItem(itemData, pos);
-                cell.item = item;
-            }
-            else
-            {
-                Debug.LogWarning($"No free spaces found on board! Spawning item at target position of {targetSpawnPos}.");
-                InstantiateItem(itemData, targetSpawnPos);
-            }
-        }
-        else
-        {
-            Debug.LogError($"No instance of {nameof(CrafterBoard)} found!" +
-                $" Cannot determine free board position; spawning at target position of {targetSpawnPos}.");
-            InstantiateItem(itemData, targetSpawnPos);
-        }
+        InstantiateItem(itemData, targetSpawnPos);
     }
 
     private Vector3 GetFreeSpawnPosition(Vector3 targetPos)
@@ -680,6 +690,18 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         }
 
         activeItems.Remove(item);
+    }
+
+    public void AddPlacementPoint(CrafterPlacementZone placementPoint)
+    {
+        placementPoints.Add(placementPoint);
+        placementPoint.ItemPlaced += OnItemPlaced;
+    }
+
+    public void RemovePlacementPoint(CrafterPlacementZone placementPoint)
+    {
+        placementPoints.Remove(placementPoint);
+        placementPoint.ItemPlaced -= OnItemPlaced;
     }
 
     public void OnCursorEvent(Cursor.CursorEvent e)

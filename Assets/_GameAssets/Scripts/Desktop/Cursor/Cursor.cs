@@ -151,35 +151,16 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
         //physics raycast
         var raycastHitCount = Physics.RaycastNonAlloc(
             cam.ScreenPointToRay(clampedRawMousePos), raycastHits, MaxRaycastDist, cursorRaycastLayerMask);
-
         for(int i = 0; i < raycastHitCount; i++)
         {
-            if (listenerHitCount >= MaxRaycastHits - 1)
-            {
-                break;
-            }
-
-            listenerHitCount += FindHitListeners(raycastHits[i].collider.gameObject);
-
-            //Debug.Log($"listeners hit by Physics raycasts: {listenerHitCount}");
+            UpdateHitListeners(raycastHits[i].collider.gameObject);
         }
 
         //UI raycast
         var uiRaycastResults = GetUIRaycastResults();
         foreach(var result in uiRaycastResults)
         {
-            if (listenerHitCount >= MaxRaycastHits - 1)
-            {
-                break;
-            }
-
-            listenerHitCount += FindHitListeners(result.gameObject);
-        }
-
-        if(listenerHitCount >= MaxRaycastHits - 1)
-        {
-            Debug.LogWarning($"Hit listener count exceeds size of raycast hit buffer! Some hits will not be registered.");
-            listenerHitCount = MaxRaycastHits - 1;
+            UpdateHitListeners(result.gameObject);
         }
 
         //check for elements the mouse is no longer hovering over
@@ -194,9 +175,9 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
             }
 
             var hitByRaycast = false;
-            for (int k = 0; k < listenerHitCount; k++)
+            for (int j = 0; j < listenerHitCount; j++)
             {
-                if (listenerRaycastHits[k] == listener)
+                if (listenerRaycastHits[j] == listener)
                 {
                     hitByRaycast = true;
                     break;
@@ -214,10 +195,8 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
             }
         }
 
-        int FindHitListeners(GameObject hitObject)
+        void UpdateHitListeners(GameObject hitObject)
         {
-            int numListeners = 0;
-
             //get all cursor event listeners in hierarchy of the hit component - TODO: think about best way
             //- require listener is actually on component? Parent of the hit component? Allow children too? 
             var hitListeners = hitObject.GetComponentsInParent<ICursorEventListener>();
@@ -228,7 +207,14 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
                     continue;
                 }
 
-                listenerRaycastHits[numListeners] = hitListener;
+                if (listenerHitCount >= MaxRaycastHits - 1)
+                {
+                    Debug.LogError($"Hit listener count exceeds size of raycast hit buffer! Some hits will not be registered.");
+                    listenerHitCount = MaxRaycastHits - 1;
+                    return;
+                }
+
+                listenerRaycastHits[listenerHitCount] = hitListener;
 
                 //add to hovered elements
                 if (trackedListeners.Contains(hitListener) && !hoveredListeners.Contains(hitListener))
@@ -237,10 +223,8 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
                     hitListener.OnCursorEvent(CursorEvent.EnterElement);
                 }
 
-                numListeners++;
+                listenerHitCount++;
             }
-
-            return numListeners;
         }
     }
 

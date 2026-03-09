@@ -70,8 +70,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
     [Space]
     [SerializeField] private float multiItemSpawnDelay = 0.1f;
     [Header("Crafting zones")]
-    [SerializeField] private List<CrafterPlacementZone> placementPoints;
-    [SerializeField] private Transform craftingResultSpawnPos;
+    [SerializeField] private CrafterBoard crafterBoard;
     [SerializeField] private List<CraftingItemData> randomProducts;
     [SerializeField] private bool SpawnHelperIngredientsIfNoCraftPossible = true;
     [SerializeField] private float helperSpawnMinTime = 1f;
@@ -94,8 +93,6 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
     private const float MaxRaycastDist = 20f;
     private readonly Vector3 RaycastStartUpOffset = Vector3.up * 10f;
 
-    private HashSet<CraftingItem> placedItems = new HashSet<CraftingItem>();
-
     //Dictionary of {ITEM : CONTACTS} where ITEM is the item which initially reported the contact.
     //Contains duplicates so all contacts can be found using any contacting item's key, e.g.
     //{WATER : [WATER, GROUND, BEACH]}
@@ -112,10 +109,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 
     private void OnEnable()
     {
-        foreach(var placementPoint in placementPoints)
-        {
-            placementPoint.ItemPlaced += OnItemPlaced;
-        }
+        
     }
 
     private void Start()
@@ -135,9 +129,13 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
             Cursor.Inst.RemoveCursorEventListener(this);
         }
 
-        foreach (var placementPoint in placementPoints)
+        if(crafterBoard)
         {
-            placementPoint.ItemPlaced -= OnItemPlaced;
+            foreach (var placementPoint in crafterBoard.PlacementPoints)
+            {
+                placementPoint.ItemPlaced -= OnItemPlacedOrRemoved;
+                placementPoint.ItemRemoved -= OnItemPlacedOrRemoved;
+            }
         }
     }
 
@@ -166,13 +164,18 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         }
     }
 
-    private void OnItemPlaced(CraftingItem item)
+    private void OnItemPlacedOrRemoved()
     {
-        placedItems.Add(item);
-        if(placedItems.Count > 1)
+        var placedItems = new List<CraftingItem>();
+        foreach(var placementPoint in crafterBoard.PlacementPoints)
         {
-            TryCraft(placedItems);
+            if(placementPoint.CurrentItem)
+            {
+                placedItems.Add(placementPoint.CurrentItem);
+            }
         }
+
+        TryCraft(placedItems);
     }
 
     private void UpdateTrimmedItemGroups()
@@ -279,7 +282,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         //UpdateTrimmedItemGroups();
     }
 
-    private int TryCraft(HashSet<CraftingItem> ingredients)
+    private int TryCraft(ICollection<CraftingItem> ingredients)
     {
         var numResults = GetCraftResultsAllItems(ingredients, craftResults, craftResultStates);
 
@@ -316,11 +319,10 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         return numResults;
     }
 
-    private int GetCraftResultsAllItems(HashSet<CraftingItem> ingredients, CraftingItemData[] results, CraftingResultState[] resultStates)
+    private int GetCraftResultsAllItems(ICollection<CraftingItem> ingredients, CraftingItemData[] results, CraftingResultState[] resultStates)
     {
         if (ingredients.Count < 2)
         {
-            Debug.LogError($"Crafting attempted with <2 ingredients! This shouldn't happen");
             return 0;
         }
 
@@ -380,7 +382,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         return numResults;
     }
 
-    private int GetNumMatchingIngredientsToItemPrereqs(CraftingItemData item, HashSet<CraftingItem> ingredients)
+    private int GetNumMatchingIngredientsToItemPrereqs(CraftingItemData item, ICollection<CraftingItem> ingredients)
     {
         unusedIngredients.Clear();
         unusedIngredients.AddRange(ingredients);
@@ -391,10 +393,12 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
             for (int i = unusedIngredients.Count - 1; i >= 0; i--)
             {
                 //TODO: probably ingredients which are flagged as not to be used in crafts shouldn't even make it to this stage; refactor?
+                /*
                 if (!unusedIngredients[i].CanCraft) 
                 {
                     continue;
                 }
+                */
                 
                 if (unusedIngredients[i].Data == prereqData || unusedIngredients[i].Data.Aliases.Contains(prereqData))
                 {
@@ -409,7 +413,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
     }
 
     //Placeholder sequence! TODO: refactor and optimise
-    private IEnumerator DoSuccessfulCrafts(HashSet<CraftingItem> ingredients, List<CraftingItemData> successfulCrafts)
+    private IEnumerator DoSuccessfulCrafts(ICollection<CraftingItem> ingredients, List<CraftingItemData> successfulCrafts)
     {
         if(ingredients.Count == 0 || successfulCrafts.Count == 0)
         {
@@ -425,15 +429,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         var ingredientsList = new List<CraftingItem>(ingredients);
         var numIngredients = ingredients.Count;
 
-        var centrePos = Vector3.zero;
-        if(craftingResultSpawnPos)
-        {
-            centrePos = craftingResultSpawnPos.position;
-        }
-        else
-        {
-            Debug.LogError($"No crafting result spawn position Transform set! Spawning at (0,0,0).");
-        }
+        var centrePos = crafterBoard ? crafterBoard.CraftResultSpawnPos : Vector3.zero;
 
         var angleInc = 360f / ingredients.Count;
         var upInc = Vector3.up * 0.1f; //add a small vertical increment to each card to avoid z-fighting (and to look nice)
@@ -479,7 +475,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 
         //Spawn new items - angle stuff is jank lmao
         var newItemStartAngle = Random.Range(0f, 360f);
-        var newItemOffset = new Vector3(0f, 0.5f, 1f); //forward and up
+        var newItemOffset = new Vector3(0f, 0.5f, 0.5f); //forward and up
         var numToSpawn = successfulCrafts.Count;
         foreach(var result in successfulCrafts)
         {
@@ -494,8 +490,10 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 
             //Instantiate new item
             var result = successfulCrafts[i];
-            var posOffset = Quaternion.Euler(0f, (angleInc * spawnCount) + newItemStartAngle, 0f) * newItemOffset;
-            SpawnItem(result, centrePos + posOffset);
+            //var posOffset = Quaternion.Euler(0f, (angleInc * spawnCount) + newItemStartAngle, 0f) * newItemOffset;
+            var posOffset = Vector3.right * 1.25f;
+            //SpawnItem(result, centrePos + posOffset);
+            SpawnItem(result, centrePos + (posOffset * spawnCount));
             spawnCount++;
 
             //TODO: "new WaitForSeconds" allocates - make a helper class to get WaitForSecondses without allocation
@@ -507,8 +505,9 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
                 foreach (var product in result.ExtraProducts)
                 {
                     //spawn item
-                    posOffset = Quaternion.Euler(0f, (angleInc * spawnCount) + newItemStartAngle, 0f) * newItemOffset;
-                    var item = InstantiateItem(product, centrePos + posOffset);
+                    //posOffset = Quaternion.Euler(0f, (angleInc * spawnCount) + newItemStartAngle, 0f) * newItemOffset;
+                    //var item = InstantiateItem(product, centrePos + posOffset);
+                    var item = InstantiateItem(product, centrePos + (posOffset * spawnCount));
                     //CraftingItemDeck.Inst?.AddItemToTopDeck(item);
                     spawnCount++;
                     Debug.Log($"Spawned extra product {product.ItemName} from craft result {result.ItemName}!");
@@ -666,7 +665,17 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
             yield return new WaitForSeconds(Random.Range(helperSpawnMinTime, helperSpawnMaxTime));
 
             InstantiateItem(randomProducts[Random.Range(0, randomProducts.Count)],
-                CrafterBoard.Inst.GetRandomPointOnBoard(padding: 1f) + Vector3.up * 10f);
+                crafterBoard.GetRandomPointOnBoard(padding: 1f) + Vector3.up * 10f);
+        }
+    }
+
+    public void SetBoard(CrafterBoard board)
+    {
+        crafterBoard = board;
+        foreach (var placementPoint in crafterBoard.PlacementPoints)
+        {
+            placementPoint.ItemPlaced += OnItemPlacedOrRemoved;
+            placementPoint.ItemRemoved += OnItemPlacedOrRemoved;
         }
     }
 
@@ -692,22 +701,10 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         activeItems.Remove(item);
     }
 
-    public void AddPlacementPoint(CrafterPlacementZone placementPoint)
-    {
-        placementPoints.Add(placementPoint);
-        placementPoint.ItemPlaced += OnItemPlaced;
-    }
-
-    public void RemovePlacementPoint(CrafterPlacementZone placementPoint)
-    {
-        placementPoints.Remove(placementPoint);
-        placementPoint.ItemPlaced -= OnItemPlaced;
-    }
-
-    public void OnCursorEvent(Cursor.CursorEvent e)
+    public void OnCursorEvent(Cursor.EventID e)
     {
         //TODO: prototype hack
-        if(e == Cursor.CursorEvent.LeftClickUp)
+        if(e == Cursor.EventID.LeftClickUp)
         {
             canCraft = true;
         }

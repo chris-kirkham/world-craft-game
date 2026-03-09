@@ -1,7 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 [System.Serializable]
@@ -9,22 +11,23 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
 {
     /// <summary>
     /// Animatable = crafting OFF, input OFF, kinematic rb, collision OFF
-    /// Inert = crafting OFF, input OFF, non-kinematic rb, collision ON
     /// Draggable = crafting OFF, input ON, kinematic rb, collision OFF
     /// Active = crafting ON, input ON, non-kinematic rb, collision ON
     /// </summary>
     public enum State
     {
         Animatable,
-        Inert, 
         Draggable,
         Active
     }
 
+    [Header("Item data")]
     [SerializeField] private CraftingItemData itemData;
+
+    [Header("Physics/movement")]
     [SerializeField] private Rigidbody rb;
     [SerializeField] private Collider coll;
-    [SerializeField] private DraggableElement dragHandler;
+    [SerializeField] private DraggablePhysicsObject dragHandler;
 
     [Header("UI")]
     [SerializeField] private RectTransform canvasRect;
@@ -40,7 +43,6 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     private bool acceptInput = true;
     private bool canBeUsedInCraft = true;
     private bool isHovered;
-    private bool isDragging;
     private bool isTouchingOtherItems;
 
     public CraftingItemData Data 
@@ -54,6 +56,8 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     }
 
     public bool CanCraft => canBeUsedInCraft;
+
+    public event Action OnUsedInSuccessfulCraft;
 
     private void OnEnable()
     {
@@ -221,19 +225,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         }
     }
 
-    private void OpenItem()
-    {
-        if(!WindowManager.InstExists())
-        {
-            Debug.LogError($"Instance of {nameof(WindowManager)} not found! Cannot open item window.");
-            return;
-        }
-
-        WindowManager.Inst.CreateWindow(itemData.WindowContent);
-        Destroy(this.gameObject);
-    }
-
-    public void TryForceDragStart()
+    public void TryStartDrag()
     {
         dragHandler.TryStartDrag();
     }
@@ -242,22 +234,17 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     {
         SetCollisionEnabled(false);
         SetPartialCraftVFX(false);
-        isDragging = true;
     }
 
     private void OnDragEnd()
     {
         SetCollisionEnabled(true);
-        isDragging = false;
     }
 
     //called when this item is first crafted
     public void OnCrafted()
     {
         OnCraftedVFX();
-
-        //SetCollisionEnabled(false);
-        //StartCoroutine(SetCollisionEnabledWithDelay(true, onCraftedCollisionEnableDelay));
     }
 
     private void OnCraftedVFX()
@@ -300,12 +287,13 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         {
             CraftingItemDeck.Inst.AddItemToBottomDeck(this);
         }
+        OnUsedInSuccessfulCraft?.Invoke();
         //Destroy(gameObject);
     }
 
     public void SetState(State state)
     {
-        SetPhysAndCollision(state == State.Inert || state == State.Active);
+        SetPhysAndCollision(state == State.Active);
         SetCanBeUsedInCraft(state == State.Active);
         SetAcceptInput(state == State.Draggable || state == State.Active);
     }
@@ -331,12 +319,13 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     {
         rb.isKinematic = !enabled;
         SetCollisionEnabled(enabled);
+        dragHandler.ReEnablePhysicsOnEndDrag = enabled; //hack
     }
 
     private void SetAcceptInput(bool acceptInput)
     {
         this.acceptInput = acceptInput;
-        dragHandler.enabled = acceptInput;
+        dragHandler.SetDragEnabled(acceptInput);
 
         if(!acceptInput)
         {
@@ -354,17 +343,17 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         }
     }
 
-    public void OnCursorEvent(Cursor.CursorEvent e)
+    public void OnCursorEvent(Cursor.EventID e)
     {
-        if (e == Cursor.CursorEvent.EnterElement)
+        if (e == Cursor.EventID.EnterElement)
         {
             isHovered = true;
         }
-        else if (e == Cursor.CursorEvent.ExitElement)
+        else if (e == Cursor.EventID.ExitElement)
         {
             isHovered = false;
         }
-        else if (e == Cursor.CursorEvent.RightClickDown)
+        else if (e == Cursor.EventID.RightClickDown)
         {
             //inspect item while holding right-click?
         }

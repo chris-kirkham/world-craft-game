@@ -6,15 +6,34 @@ using UnityEngine.InputSystem;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
 public class Cursor : SingletonMonoBehaviour<Cursor>
 {
+    public struct CursorEvent
+    {
+        public CursorEvent(EventID id)
+        {
+            this.id = id;
+            listener = null;
+        }
+
+        public CursorEvent(EventID id, ICursorEventListener listener)
+        {
+            this.id = id;
+            this.listener = listener;
+        }
+
+        public EventID id;
+        public ICursorEventListener listener; //if null, event will be sent to all tracked listeners
+    }
+
     //high-level cursor event enum for use by other scripts. Necessary, or use InputSystem somehow?
     [Flags]
-    public enum CursorEvent
+    public enum EventID
     {
         None = 0,
         MouseMove = 1 << 0,
@@ -54,7 +73,7 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
     private ICursorEventListener[] listenerRaycastHits = new ICursorEventListener[MaxRaycastHits];
 
     //input
-    private int currentEventFlags;
+    private Stack<CursorEvent> eventStack  = new Stack<CursorEvent>();
     private Vector2 rawMousePosition;
     private Vector2 prevRawMousePosition;
     private Vector2 clampedRawMousePos;
@@ -71,8 +90,6 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
     private List<ICursorEventListener> hoveredListeners = new List<ICursorEventListener>(); //event listeners the cursor is currently on top of
     private List<SpriteOverride> spriteOverrides = new List<SpriteOverride>();
 
-    public List<ICursorEventListener> HoveredListeners => hoveredListeners;
-
     public Vector2 RawPosition => rawMousePosition;
     public Vector2 RawPositionDelta => rawMousePosition - prevRawMousePosition;
     public Vector2 ClampedPosition_SS => clampedRawMousePos;
@@ -88,7 +105,6 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
 
     private HashSet<DraggableElement> dragRequests = new HashSet<DraggableElement>();
     public DraggableElement CurrentDragTarget { get; set; } 
-    
 
     private void OnEnable()
     {
@@ -101,43 +117,19 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
     private void Update()
     {
         DoCursorRaycasts();
-
-        //DEBUG
-        if(currentEventFlags > 0)
-        {
-            var cursorEventsThisTickLog = "";
-            int e = 1;
-            int i = 0;
-            while(e < (int)CursorEvent.MAX)
-            {
-                if((e & currentEventFlags) > 0)
-                {
-                    cursorEventsThisTickLog += ((CursorEvent)e).ToString() + ", ";
-                }
-
-                e = 1 << i;
-                i++;
-            }
-        
-            Debug.Log(cursorEventsThisTickLog);
-        }
-
     }
 
     private void LateUpdate()
     {
-        currentEventFlags = 0;
-
         prevRawMousePosition = rawMousePosition;
         prevClampedMousePos_WS = ClampedPosition_WS;
 
         AddFlaggedCursorEventListeners();
         RemoveFlaggedCursorEventListeners();
+        SendEvents();
+        UpdateDragTarget(); //N.B. update drag target at end of frame to allow other scripts to use current drag target before then
 
-        //N.B. only update drag target at end of frame to allow other scripts to use current drag target before then
-        UpdateDragTarget();
-
-        if(debugDisplay)
+        if (debugDisplay)
         {
             debugDisplay.SetCursorDebugInfo(this, dragRequests);
         }
@@ -188,7 +180,7 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
             {
                 if (trackedListeners.Contains(listener))
                 {
-                    listener.OnCursorEvent(CursorEvent.ExitElement);
+                    AddEvent(EventID.ExitElement, listener);
                 }
 
                 hoveredListeners.RemoveAt(i);
@@ -220,7 +212,7 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
                 if (trackedListeners.Contains(hitListener) && !hoveredListeners.Contains(hitListener))
                 {
                     hoveredListeners.Add(hitListener);
-                    hitListener.OnCursorEvent(CursorEvent.EnterElement);
+                    AddEvent(EventID.EnterElement, hitListener);
                 }
 
                 listenerHitCount++;
@@ -252,7 +244,6 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
         cursorImage.rectTransform.anchoredPosition = new Vector2(clampedRawMousePos.x, clampedRawMousePos.y);
     }
 
-    //TODO: refactor!!!! Use IOverrideCursorSprite interface and let cursor decide when/what to override?
     public void AddSpriteOverride(SpriteOverride spriteOverride)
     {
         if(spriteOverrides.Contains(spriteOverride))
@@ -328,29 +319,48 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
     {
         isPositionFrozen = frozen;
     }
-    
-    public void AddEvent(CursorEvent e)
-    {
-        currentEventFlags += (int)e;
 
-        foreach (var listener in trackedListeners)
-        {
-            listener.OnCursorEvent(e);
-        }
+    //returns true if the cursor is hovering over the given listener
+    public bool IsHovered(ICursorEventListener listener)
+    {
+        return hoveredListeners.Contains(listener);
+    }
+    
+    public void AddEvent(EventID e, ICursorEventListener listener = null)
+    {
+        eventStack.Push(new CursorEvent(e, listener));
+        //TODO: trigger events on LateUpdate so they're not being spread throughout the frame?
+        
     }
 
-    public bool HasEvent(CursorEvent e)
+    private void SendEvents()
     {
-        return (currentEventFlags & 1 << (int)e) > 0;
+        while(eventStack.Count > 0)
+        {
+            var e = eventStack.Pop();
+            if(e.listener != null)
+            {
+                e.listener.OnCursorEvent(e.id);
+            }
+            else
+            {
+                foreach(var listener in trackedListeners)
+                {
+                    listener.OnCursorEvent(e.id);
+                }
+            }
+        }
     }
 
     public void AddToDragList(DraggableElement draggable)
     {
+        Debug.Log($"Adding {draggable.gameObject.name} to drag list at frame {Time.frameCount}!");
         dragRequests.Add(draggable);
     }
 
     public void RemoveFromDragList(DraggableElement draggable)
     {
+        Debug.Log($"Removing {draggable.gameObject.name} from drag list at frame {Time.frameCount}!");
         dragRequests.Remove(draggable);
     }
 
@@ -365,7 +375,6 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
             }
             else //if current drag target was removed from the drag list, end that drag
             {
-                CurrentDragTarget.EndDrag();
                 CurrentDragTarget = null;
             }
         }
@@ -399,8 +408,6 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
             CurrentDragTarget.StartDrag();
         }
     }
-
-
     private void OnDrawGizmos()
     {
 #if UNITY_EDITOR
@@ -420,7 +427,7 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
 
         if (!isPositionFrozen)
         {
-            AddEvent(CursorEvent.MouseMove);
+            AddEvent(EventID.MouseMove);
             SetPosition(rawMousePosition);
         }
     }
@@ -450,36 +457,36 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
             case 0:
                 if (pressed && !mouseButtonsPressed[button])
                 {
-                    AddEvent(CursorEvent.LeftClickDown);
+                    AddEvent(EventID.LeftClickDown);
                 }
 
                 if(!pressed && mouseButtonsPressed[button])
                 {
-                    AddEvent(CursorEvent.LeftClickUp);
+                    AddEvent(EventID.LeftClickUp);
                 }
 
                 break;
             case 1:
                 if (pressed && !mouseButtonsPressed[button])
                 {
-                    AddEvent(CursorEvent.RightClickDown);
+                    AddEvent(EventID.RightClickDown);
                 }
 
                 if (!pressed && mouseButtonsPressed[button])
                 {
-                    AddEvent(CursorEvent.RightClickUp);
+                    AddEvent(EventID.RightClickUp);
                 }
 
                 break;
             case 2:
                 if (pressed && !mouseButtonsPressed[button])
                 {
-                    AddEvent(CursorEvent.MiddleClickDown);
+                    AddEvent(EventID.MiddleClickDown);
                 }
 
                 if (!pressed && mouseButtonsPressed[button])
                 {
-                    AddEvent(CursorEvent.MiddleClickUp);
+                    AddEvent(EventID.MiddleClickUp);
                 }
 
                 break;

@@ -167,14 +167,14 @@ public class CameraMovement : MonoBehaviour, ICursorEventListener
         movementEnabled = enabled;
     }
 
-    public void OnCursorEvent(Cursor.CursorEvent e)
+    public void OnCursorEvent(Cursor.EventID e)
     {
-        if(e == Cursor.CursorEvent.RightClickDown)
+        if(e == Cursor.EventID.RightClickDown)
         {
             SetDragging(true);
         }
 
-        if(e == Cursor.CursorEvent.MouseMove)
+        if(e == Cursor.EventID.MouseMove)
         {
             cursorPos_SS = Cursor.Inst.ClampedPosition_SS;
         }

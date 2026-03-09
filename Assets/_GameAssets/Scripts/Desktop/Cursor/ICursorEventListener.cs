@@ -35,5 +35,5 @@ public interface ICursorEventListener
         }
     }
 
-    public void OnCursorEvent(Cursor.CursorEvent e);
+    public void OnCursorEvent(Cursor.EventID e);
 }

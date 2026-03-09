@@ -3,13 +3,18 @@ using UnityEngine.SceneManagement;
 
 class AutoLoadBootstrapScene
 {
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
+    private const int BoostrapSceneIndex = 0;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void LoadBoostrapScene()
     {
-        if(SceneManager.GetActiveScene().buildIndex != 0) //build index 0 should always be the boostrap scene (TODO: add validation)
+        var activeSceneIdx = SceneManager.GetActiveScene().buildIndex;
+        if (activeSceneIdx != BoostrapSceneIndex) 
         {
+            SceneManager.UnloadScene(activeSceneIdx);
             Debug.Log($"Loading boostrap scene...");
-            SceneManager.LoadScene(0, LoadSceneMode.Additive); 
+            SceneManager.LoadScene(0, LoadSceneMode.Single);
+            SceneManager.LoadScene(activeSceneIdx, LoadSceneMode.Additive);
         }
     }
 }

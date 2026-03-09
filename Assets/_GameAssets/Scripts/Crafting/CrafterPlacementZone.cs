@@ -13,12 +13,14 @@ public class CrafterPlacementZone : MonoBehaviour, ICursorEventListener
 
     [SerializeField] private Transform zonePivot;
     [SerializeField] private Vector2 zoneSize;
-    [SerializeField] private Transform craftResultSpawnPoint;
-
-    public event Action<CraftingItem> ItemPlaced;
 
     private CraftingItem currentItem;
     private State state;
+
+    public CraftingItem CurrentItem => currentItem;
+
+    public event Action ItemPlaced;
+    public event Action ItemRemoved;
 
     private void Start()
     {   
@@ -30,15 +32,6 @@ public class CrafterPlacementZone : MonoBehaviour, ICursorEventListener
         if(Cursor.InstExists())
         {
             Cursor.Inst.AddCursorEventListener(this);
-        }
-
-        if(CraftingManager.InstExists())
-        {
-            CraftingManager.Inst.AddPlacementPoint(this);
-            if(craftResultSpawnPoint)
-            {
-
-            }
         }
     }
 
@@ -54,28 +47,89 @@ public class CrafterPlacementZone : MonoBehaviour, ICursorEventListener
     {
         if(!currentItem)
         {
-            RemoveItem();
+            SetState(State.Empty);
         }
     }
 
     private void SetState(State newState)
     {
+        if(newState == state)
+        {
+            return;
+        }
+
+        var prevState = state;
         state = newState;
+
+        if (prevState == State.PlacementPreview)
+        {
+            StopPlacementPreview();
+        }
+
+        switch (state)
+        {
+            case State.Empty:
+                SetItem(null);
+                ItemRemoved?.Invoke();
+                break;
+            case State.PlacementPreview:
+                StartPlacementPreview();
+                break;
+            case State.ItemPlaced:
+                Debug.Assert(currentItem);
+                if (currentItem)
+                {
+                    currentItem.SetState(CraftingItem.State.Animatable);
+                    currentItem.transform.position = zonePivot.position;
+                    currentItem.transform.rotation = zonePivot.rotation;
+                    currentItem.SetState(CraftingItem.State.Draggable);
+                    ItemPlaced?.Invoke();
+                }
+                break;
+            default:
+                break;
+        }
     }
 
-    private void PlaceItem(CraftingItem item)
+    private void SetItem(CraftingItem item)
     {
-        Debug.Assert(item);
+        if(currentItem && item != currentItem)
+        {
+            currentItem.OnUsedInSuccessfulCraft -= OnItemUsedInCraft;
+        }
 
         currentItem = item;
-        ItemPlaced?.Invoke(item);
-        SetState(State.ItemPlaced);
+
+        if(currentItem)
+        {
+            currentItem.OnUsedInSuccessfulCraft += OnItemUsedInCraft;
+        }
     }
 
-    public void RemoveItem()
+    private void OnItemUsedInCraft()
     {
-        currentItem = null;
         SetState(State.Empty);
+    }
+
+    private void GrabCurrentItem()
+    {
+        Debug.Assert(currentItem);
+        if(!currentItem)
+        {
+            return;
+        }
+
+        if(Cursor.Inst.IsHovered(this))
+        {
+            SetState(State.PlacementPreview);
+        }
+        else
+        {
+            SetState(State.Empty);
+        }
+
+        currentItem.SetState(CraftingItem.State.Active);
+        currentItem.TryStartDrag();
     }
 
     private void StartPlacementPreview()
@@ -86,35 +140,35 @@ public class CrafterPlacementZone : MonoBehaviour, ICursorEventListener
     {
     }
 
-    public void OnCursorEvent(Cursor.CursorEvent e)
+    public void OnCursorEvent(Cursor.EventID e)
     {
-        if(e == Cursor.CursorEvent.EnterElement) //is cursor over this placement zone?
+        if(e == Cursor.EventID.EnterElement) //is cursor over this placement zone?
         {
-            if(state != State.ItemPlaced)
+            if(!currentItem
+                && Cursor.Inst.CurrentDragTarget
+                && Cursor.Inst.CurrentDragTarget.TryGetComponent<CraftingItem>(out var item)) //TODO: brittle! fails if item isn't on the same object as drag handler)
             {
-                if(Cursor.Inst.CurrentDragTarget
-                    && Cursor.Inst.CurrentDragTarget.TryGetComponent<CraftingItem>(out var item)) //TODO: brittle! fails if item isn't on the same object as drag handler
-                {
-                    currentItem = item;
-                    SetState(State.PlacementPreview);
-                    StartPlacementPreview();
-                }
+                SetItem(item);
+                SetState(State.PlacementPreview);
             }
         }
-        else if(e == Cursor.CursorEvent.ExitElement)
+        else if(e == Cursor.EventID.ExitElement)
         {
-            if(state == State.PlacementPreview)
+            //dragged item moved away from placement zone - go back to empty state 
+            if (state == State.PlacementPreview)
             {
-                StopPlacementPreview();
                 SetState(State.Empty);
-                currentItem = null;
             }
         }
-
-        //if releasing a dragged crafting item over this placement zone
-        if (e == Cursor.CursorEvent.LeftClickUp && state == State.PlacementPreview) 
+        else if(e == Cursor.EventID.LeftClickDown && state == State.ItemPlaced && Cursor.Inst.IsHovered(this))
         {
-            PlaceItem(currentItem);
+            //pick up placed item
+            GrabCurrentItem();
+        }
+        else if (e == Cursor.EventID.LeftClickUp && state == State.PlacementPreview) 
+        {
+            //release a dragged crafting item over this placement zone
+            SetState(State.ItemPlaced);
         }
     }
 
@@ -122,6 +176,6 @@ public class CrafterPlacementZone : MonoBehaviour, ICursorEventListener
     {
         Gizmos.matrix = Matrix4x4.identity;
         Gizmos.color = state == State.ItemPlaced ? Color.cyan : state == State.PlacementPreview ? Color.green : Color.white;
-        Gizmos.DrawCube(zonePivot ? zonePivot.position : transform.position, new Vector3(zoneSize.x, 1f, zoneSize.y));
+        Gizmos.DrawWireCube(zonePivot ? zonePivot.position : transform.position, new Vector3(zoneSize.x, 0.1f, zoneSize.y));
     }
 }

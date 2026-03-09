@@ -13,6 +13,9 @@ public class DraggablePhysicsObject : DraggableElement
     private const int MaxRaycastHits = 20;
     private RaycastHit[] raycastHits = new RaycastHit[MaxRaycastHits];
 
+    //hack to prevent... this re-enabling physics when it shouldn't
+    public bool ReEnablePhysicsOnEndDrag { get; set; } = true;
+
     protected override void OnEnable()
     {
         base.OnEnable();
@@ -47,14 +50,17 @@ public class DraggablePhysicsObject : DraggableElement
     {
         base.OnEndDrag();
 
-        if(rb)
+        if(ReEnablePhysicsOnEndDrag)
         {
-            rb.isKinematic = false;
-        }
+            if (rb)
+            {
+                rb.isKinematic = false;
+            }
 
-        if(coll)
-        {
-            coll.enabled = true;
+            if (coll)
+            {
+                coll.enabled = true;
+            }
         }
     }
 

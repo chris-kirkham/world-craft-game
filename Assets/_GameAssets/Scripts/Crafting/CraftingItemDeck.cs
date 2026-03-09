@@ -10,6 +10,7 @@ public class CraftingItemDeck : SingletonMonoBehaviour<CraftingItemDeck>, ICurso
 
     [SerializeField] private CraftingItemDatabase startingDeck;
     [SerializeField] private float itemHeight = 0.1f;
+    [SerializeField] private float itemZOffset = 0.05f;
     [SerializeField] private bool populateOnEnable;
 
     private LinkedList<CraftingItem> deck = new LinkedList<CraftingItem>();
@@ -41,24 +42,13 @@ public class CraftingItemDeck : SingletonMonoBehaviour<CraftingItemDeck>, ICurso
         }
     }
 
-    public CraftingItem RemoveTopItem()
-    {
-        if(deck.Count == 0)
-        {
-            return null;
-        }
-
-        var item = deck.Last.Value;
-        OnItemRemoved(item);
-        deck.RemoveLast();
-        return item;
-    }
-
     public void AddItemToTopDeck(CraftingItem item)
     {
         OnItemAdded(item);
         deck.AddLast(item);
-        MoveItemToDeck(item.transform, transform.position + (deck.Count * itemHeight * Vector3.up));
+        MoveItemToDeck(item.transform, transform.position 
+            + (deck.Count * itemHeight * Vector3.up) 
+            + (deck.Count * itemZOffset * Vector3.forward));
     }
 
     public void AddItemToBottomDeck(CraftingItem item)
@@ -67,6 +57,7 @@ public class CraftingItemDeck : SingletonMonoBehaviour<CraftingItemDeck>, ICurso
         foreach(var deckItem in deck)
         {
             deckItem.transform.position += itemUpInc;
+            deckItem.transform.position += Vector3.forward * itemZOffset;
         }
 
         OnItemAdded(item);
@@ -123,11 +114,38 @@ public class CraftingItemDeck : SingletonMonoBehaviour<CraftingItemDeck>, ICurso
 
     private void GrabTopDeckItem()
     {
-        var item = RemoveTopItem();
+        var item = deck.Last.Value;
         if(item)
         {
-           item.TryForceDragStart();
+            item.TryStartDrag();
         }
+    }
+
+    public void RemoveItem(CraftingItem item)
+    {
+        if(deck.Count == 0)
+        {
+            return;
+        }
+
+        var node = deck.Find(item);
+        if(node != null)
+        {
+            deck.Remove(node);
+            OnItemRemoved(item);
+        }
+    }
+
+    private void RemoveTopItem()
+    {
+        if (deck.Count == 0)
+        {
+            return;
+        }
+
+        var item = deck.Last.Value;
+        OnItemRemoved(item);
+        deck.RemoveLast();
     }
 
     private IEnumerator AnimateItemToDeckRoutine(Transform item, Vector3 targetPos, Quaternion targetRotation)
@@ -154,17 +172,19 @@ public class CraftingItemDeck : SingletonMonoBehaviour<CraftingItemDeck>, ICurso
         }
     }
 
-    public void OnCursorEvent(Cursor.CursorEvent e)
+    public void OnCursorEvent(Cursor.EventID e)
     {
-        if(e == Cursor.CursorEvent.EnterElement)
+        if(e == Cursor.EventID.EnterElement)
         {
             isHovered = true;
         }
-        else if(e == Cursor.CursorEvent.ExitElement)
+        
+        if(e == Cursor.EventID.ExitElement)
         {
             isHovered = false;
         }
-        else if(e == Cursor.CursorEvent.LeftClickDown)
+        
+        if(e == Cursor.EventID.LeftClickDown)
         {
             if(isHovered)
             {

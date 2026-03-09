@@ -49,26 +49,26 @@ public class IntroSeqCraftingItem : MonoBehaviour, ICursorEventListener
         introSequence.OnChooseItem(item);
     }
 
-    public void OnCursorEvent(Cursor.CursorEvent e)
+    public void OnCursorEvent(Cursor.EventID e)
     {
         if(!enabled)
         {
             return;
         }
 
-        if(e == Cursor.CursorEvent.EnterElement)
+        if(e == Cursor.EventID.EnterElement)
         {
             isHovered = true;
             onHoverText.EnableAndPlayInClip();
         }
 
-        if (e == Cursor.CursorEvent.ExitElement)
+        if (e == Cursor.EventID.ExitElement)
         {
             isHovered = false;
             onHoverText.PlayClipThenDisable();
         }
 
-        if(e == Cursor.CursorEvent.LeftClickDown && isHovered)
+        if(e == Cursor.EventID.LeftClickDown && isHovered)
         {
             OnSelected();
         }

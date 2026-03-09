@@ -10,7 +10,7 @@ public interface IOverrideCursorSprite
 
     }
 
-    public Cursor.CursorEvent OverrideOnInputEvent { get; }
+    public Cursor.EventID OverrideOnInputEvent { get; }
 
     public Sprite CursorSpriteOverride { get; }
 

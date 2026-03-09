@@ -57,7 +57,7 @@ public class DraggableUIElement : DraggableElement
             Gizmos.color = new Color(Color.magenta.r, Color.magenta.g, Color.magenta.b, 0.1f);
             Gizmos.DrawCube(handleRectWorldCorners[0] + size / 2, size);
         }
-        else if (isHovered)
+        else if (Cursor.Inst.IsHovered(this))
         {
             Gizmos.color = new Color(Color.cyan.r, Color.cyan.g, Color.cyan.b, 0.1f);
             Gizmos.DrawCube(handleRectWorldCorners[0] + size / 2, size);

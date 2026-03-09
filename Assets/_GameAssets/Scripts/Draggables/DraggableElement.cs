@@ -1,12 +1,10 @@
 using System;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 
 //base class for click-and-draggable items
 public abstract class DraggableElement : MonoBehaviour, ICursorEventListener
 {
-    protected bool isHovered;
     protected bool isDragging;
 
     protected virtual Sprite OnHoverDragSprite { get; set; }
@@ -15,6 +13,8 @@ public abstract class DraggableElement : MonoBehaviour, ICursorEventListener
 
     public UnityEvent DragStarted;
     public UnityEvent DragEnded;
+
+    private bool dragEnabled = true;
 
     protected virtual void OnEnable()
     {
@@ -40,7 +40,7 @@ public abstract class DraggableElement : MonoBehaviour, ICursorEventListener
             Cursor.Inst.RemoveCursorEventListener(this);
         }
 
-        BreakDrag();
+        CancelDrag();
         DragStarted.RemoveAllListeners();
         DragEnded.RemoveAllListeners();
     }
@@ -57,23 +57,8 @@ public abstract class DraggableElement : MonoBehaviour, ICursorEventListener
         DragStarted?.Invoke();
     }
 
-    public void EndDrag()
-    {
-        if (!isHovered)
-        {
-            Cursor.Inst.RemoveSpriteOverride(cursorSpriteOverride);
-        }
-
-        if (!isDragging)
-        {
-            return;
-        }
-
-        isDragging = false;
-        OnEndDrag();
-        DragEnded?.Invoke();
-    }
-
+    //"Try" because if multiple draggables want to start dragging on the same tick,
+    //the cursor decides which is the best option (why does the cursor do this? maybe move it to a different class)
     public void TryStartDrag()
     {
         if(Cursor.InstExists())
@@ -82,11 +67,23 @@ public abstract class DraggableElement : MonoBehaviour, ICursorEventListener
         }
     }
 
-    public void BreakDrag()
+    public void CancelDrag()
     {
-        if(Cursor.InstExists())
+        var cursor = Cursor.Inst;
+        if (cursor)
         {
-            Cursor.Inst.RemoveFromDragList(this);
+            cursor.RemoveFromDragList(this);
+            if(cursor.IsHovered(this))
+            {
+                cursor.RemoveSpriteOverride(cursorSpriteOverride);
+            }
+        }
+
+        if (isDragging)
+        {
+            isDragging = false;
+            OnEndDrag();
+            DragEnded?.Invoke();
         }
     }
 
@@ -98,33 +95,37 @@ public abstract class DraggableElement : MonoBehaviour, ICursorEventListener
     {
     }
 
-    //TODO: When over multiple drag handles, sometimes it does both at once (e.g. moves AND resizes)!!
-    //Only do the "topmost" one - work out a priority/layer/Z system for raycasts
-    
-    //ICursorEventListener
-    public virtual void OnCursorEvent(Cursor.CursorEvent e)
+    public void SetDragEnabled(bool enabled)
+    {
+        dragEnabled = enabled;
+        if(!dragEnabled)
+        {
+            CancelDrag();
+        }
+    }
+
+    public virtual void OnCursorEvent(Cursor.EventID e)
     {
         switch(e)
         {
-            case Cursor.CursorEvent.EnterElement:
-                isHovered = true;
+            case Cursor.EventID.EnterElement:
                 Cursor.Inst.AddSpriteOverride(cursorSpriteOverride);
                 break;
-            case Cursor.CursorEvent.ExitElement:
-                isHovered = false;
+            case Cursor.EventID.ExitElement:
                 if (!isDragging)
                 {
                     Cursor.Inst.RemoveSpriteOverride(cursorSpriteOverride);
+                    CancelDrag();
                 }
                 break;
-            case Cursor.CursorEvent.LeftClickDown:
-                if(isHovered)
+            case Cursor.EventID.LeftClickDown:
+                if(Cursor.Inst.IsHovered(this))
                 {
                     TryStartDrag();
                 }
                 break;
-            case Cursor.CursorEvent.LeftClickUp:
-                BreakDrag();
+            case Cursor.EventID.LeftClickUp:
+                CancelDrag();
                 break;
             default:
                 break;

@@ -80,8 +80,8 @@ public class CrafterPlacementZone : MonoBehaviour, ICursorEventListener
                 if (currentItem)
                 {
                     currentItem.SetState(CraftingItem.State.Animatable);
-                    currentItem.transform.position = zonePivot.position;
-                    currentItem.transform.rotation = zonePivot.rotation;
+                    currentItem.SetPosition(zonePivot.position);
+                    currentItem.SetRotation(zonePivot.rotation);
                     currentItem.SetState(CraftingItem.State.Draggable);
                     ItemPlaced?.Invoke();
                 }

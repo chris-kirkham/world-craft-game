@@ -42,6 +42,32 @@ public class CraftingItemDeck : SingletonMonoBehaviour<CraftingItemDeck>, ICurso
         }
     }
 
+    private void Update()
+    {
+        //if player has started dragging the top item, remove it from the deck
+        //TODO: this is jank
+        CheckForTopItemGrabbed();
+    }
+
+    private void CheckForTopItemGrabbed()
+    {
+        if(deck.Count == 0)
+        {
+            return;
+        }
+
+        var cursor = Cursor.Inst;
+        if(!cursor || !cursor.CurrentDragTarget)
+        {
+            return;
+        }
+        
+        if (cursor.CurrentDragTarget.gameObject == deck.Last.Value.gameObject)
+        {
+            RemoveTopItem();
+        }
+    }
+
     public void AddItemToTopDeck(CraftingItem item)
     {
         OnItemAdded(item);
@@ -174,25 +200,26 @@ public class CraftingItemDeck : SingletonMonoBehaviour<CraftingItemDeck>, ICurso
 
     public void OnCursorEvent(Cursor.EventID e)
     {
-        if(e == Cursor.EventID.EnterElement)
-        {
-            isHovered = true;
-        }
-        
-        if(e == Cursor.EventID.ExitElement)
-        {
-            isHovered = false;
-        }
-        
         if(e == Cursor.EventID.LeftClickDown)
         {
-            if(isHovered)
+            if(Cursor.Inst.IsHovered(this))
             {
                 GrabTopDeckItem();
             }
         }
-    }
 
+        if(e == Cursor.EventID.LeftClickUp)
+        {
+            //drop hovered item onto deck
+            var cursor = Cursor.Inst;
+            if(cursor.IsHovered(this) && cursor.CurrentDragTarget.TryGetComponent<CraftingItem>(out var item))
+            {
+                cursor.CurrentDragTarget.CancelDrag();
+                AddItemToTopDeck(item);
+            }
+        }
+    }
+    
     private void OnDrawGizmos()
     {
         Gizmos.matrix = Matrix4x4.identity;

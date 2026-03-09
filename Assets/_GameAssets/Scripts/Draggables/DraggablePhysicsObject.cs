@@ -64,7 +64,8 @@ public class DraggablePhysicsObject : DraggableElement
         }
     }
 
-    private void FixedUpdate()
+    //private void FixedUpdate()
+    private void Update()
     {
         if(rb && isDragging)
         {
@@ -80,7 +81,8 @@ public class DraggablePhysicsObject : DraggableElement
                 distFromCamera = Mathf.Max(MinDistFromCamera, Vector3.Distance(cam.transform.position, hitPointWithHeightOffset));
                 var targetPos_WS = hit.point + ((cam.transform.position - hit.point).normalized * targetDistanceAboveGround);
 
-                rb.MovePosition(targetPos_WS);
+                //rb.MovePosition(targetPos_WS);
+                transform.position = targetPos_WS;
             }
         }
     }

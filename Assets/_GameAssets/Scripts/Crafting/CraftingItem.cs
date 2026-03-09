@@ -29,7 +29,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     [SerializeField] private Collider coll;
     [SerializeField] private DraggablePhysicsObject dragHandler;
 
-    [Header("UI")]
+    [Header("Art")]
     [SerializeField] private RectTransform canvasRect;
     [SerializeField] private Renderer image;
     [SerializeField] private RectTransform imageArea;
@@ -296,6 +296,16 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         SetPhysAndCollision(state == State.Active);
         SetCanBeUsedInCraft(state == State.Active);
         SetAcceptInput(state == State.Draggable || state == State.Active);
+    }
+
+    public void SetPosition(Vector3 position)
+    {
+        transform.position = position;
+    }
+
+    public void SetRotation(Quaternion rotation)
+    {
+        transform.rotation = rotation;
     }
 
     private void SetCollisionEnabled(bool enabled)

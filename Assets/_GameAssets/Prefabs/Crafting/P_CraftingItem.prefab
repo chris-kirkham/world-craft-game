@@ -547,9 +547,12 @@ MonoBehaviour:
   rb: {fileID: 437282539546797569}
   coll: {fileID: 3457039273893812875}
   dragHandler: {fileID: 7617850723740706044}
+  stackingOffset: {x: 0, y: 0.1, z: -0.1}
   canvasRect: {fileID: 0}
   image: {fileID: 4753229391315967444}
   imageArea: {fileID: 8254278603902409374}
+  nameText: {fileID: 2195042188167247611}
+  nameTextFade: {fileID: 6494339150709078656}
   debugImageText: {fileID: 8143671448318490687}
   onCraftedVFX: {fileID: 1289895630832583794}
   craftingPotentialVFX: {fileID: 2408735184587056423}
@@ -1168,6 +1171,7 @@ GameObject:
   - component: {fileID: 6248098828166858366}
   - component: {fileID: 4501374651324090581}
   - component: {fileID: 2195042188167247611}
+  - component: {fileID: 6494339150709078656}
   m_Layer: 6
   m_Name: DisplayNameLabel
   m_TagString: Untagged
@@ -1255,7 +1259,7 @@ MonoBehaviour:
   m_enableAutoSizing: 1
   m_fontSizeMin: 0.1
   m_fontSizeMax: 1
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -1293,6 +1297,45 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &6494339150709078656
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7620712049956180485}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c0212fba7969294c8babd87ab134a8f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  text: {fileID: 2195042188167247611}
+  fadeInTime: 1
+  fadeOutTime: 1
+  fadeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 2
+      outSlope: 2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &7940234944016782902
 GameObject:
   m_ObjectHideFlags: 0

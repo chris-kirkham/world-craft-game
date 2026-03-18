@@ -6,12 +6,14 @@ using UnityEngine.Rendering.Universal;
 public class CameraMovement : MonoBehaviour, ICursorEventListener
 {
     [SerializeField] private Camera cam;
+    [SerializeField] private bool allowMovement = true;
+    [SerializeField] private float moveSpeed = 0.2f;
+    [SerializeField] private bool allowZoom = true;
     [SerializeField] private float minZoom = 0.1f;
     [SerializeField] private float maxZoom = 10f;
     [SerializeField] private float zoomSpeed = 10f;
     [SerializeField] private Vector3 viewCentre;
     [SerializeField] private Vector3 viewSize;
-    [SerializeField] private float moveSpeed = 0.2f;
 
     [Header("Camera movement by cursor position")]
     [SerializeField] private bool moveCameraWhenCursorAtScreenEdge;
@@ -19,7 +21,6 @@ public class CameraMovement : MonoBehaviour, ICursorEventListener
     [SerializeField, Range(0f, 1f)] private float edgeZoneStartY;
     [SerializeField] private AnimationCurve edgeDragSpeedCurve;
 
-    private bool movementEnabled = true;
     private bool isDragging;
     private Vector2 mouseDelta;
     private float zoomDelta;
@@ -60,12 +61,16 @@ public class CameraMovement : MonoBehaviour, ICursorEventListener
 
     private void LateUpdate()
     {
-        if(movementEnabled)
+        if(allowMovement)
         {
             UpdatePan();
+        }
+
+        if(allowZoom)
+        {
             UpdateZoom(zoomDelta);
         }
-        
+
         ClampCameraPos();
         
         if(!Cursor.InstExists() || !Cursor.Inst.IsRightClickPressed)
@@ -162,9 +167,10 @@ public class CameraMovement : MonoBehaviour, ICursorEventListener
         zoomDelta = 0f;
     }
 
-    public void SetMovementEnabled(bool enabled)
+    public void SetMovementEnabled(bool movementEnabled, bool zoomEnabled)
     {
-        movementEnabled = enabled;
+        allowMovement = movementEnabled;
+        allowZoom = zoomEnabled;
     }
 
     public void OnCursorEvent(Cursor.EventID e)

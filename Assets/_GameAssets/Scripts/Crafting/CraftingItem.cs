@@ -3,11 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.UI;
+using DG.Tweening;
 
 [System.Serializable]
-public class CraftingItem : MonoBehaviour, ICursorEventListener
+public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
 {
     /// <summary>
     /// Animatable = crafting OFF, input OFF, kinematic rb, collision OFF
@@ -28,11 +28,14 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     [SerializeField] private Rigidbody rb;
     [SerializeField] private Collider coll;
     [SerializeField] private DraggablePhysicsObject dragHandler;
+    [SerializeField] private Vector3 stackingOffset;
 
     [Header("Art")]
     [SerializeField] private RectTransform canvasRect;
     [SerializeField] private Renderer image;
     [SerializeField] private RectTransform imageArea;
+    [SerializeField] private TextMeshProUGUI nameText;
+    [SerializeField] private FadeInOutText nameTextFade;
     [SerializeField] private TextMeshProUGUI debugImageText; //debug text for when image is missing
 
     [Header("VFX")]
@@ -42,8 +45,13 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     private Material imageMat;
     private bool acceptInput = true;
     private bool canBeUsedInCraft = true;
-    private bool isHovered;
     private bool isTouchingOtherItems;
+    private Cursor cursor;
+    private State state;
+
+    private Sequence tweenSequence;
+
+    private bool isInspecting;
 
     public CraftingItemData Data 
     {
@@ -55,8 +63,11 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         } 
     }
 
-    public bool CanCraft => canBeUsedInCraft;
-
+    //IStackable
+    public bool CanStack => true;
+    public Vector3 StackingOffset => stackingOffset;
+    public Stacker CurrentStacker { get; set; }
+    
     public event Action OnUsedInSuccessfulCraft;
 
     private void OnEnable()
@@ -68,7 +79,8 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
 
         if (Cursor.InstExists())
         {
-            Cursor.Inst.AddCursorEventListener(this);
+            cursor = Cursor.Inst;
+            cursor.AddCursorEventListener(this);
         }
         else
         {
@@ -92,9 +104,9 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
 
     private void OnDisable()
     {
-        if (Cursor.InstExists())
+        if (cursor)
         {
-            Cursor.Inst.RemoveCursorEventListener(this);
+            cursor.RemoveCursorEventListener(this);
         }
 
         if(CraftingManager.InstExists())
@@ -109,6 +121,11 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         }
 
         RemoveAllItemContacts();
+
+        if(tweenSequence != null)
+        {
+            //tweenSequence.Kill();
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -181,7 +198,12 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
             
             return;
         }
-    
+
+        if (nameText)
+        {
+            nameText.text = itemData.ItemName;
+        }
+
         gameObject.name = "Item_" + itemData.ItemName;
 
         if(CraftingManager.InstExists())
@@ -239,6 +261,34 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     private void OnDragEnd()
     {
         SetCollisionEnabled(true);
+        
+        //check for stacking!!
+        if(CanStack && cursor)
+        {
+            //TODO: PROTOTYPE
+            var hits = Physics.RaycastAll(transform.position, Vector3.down);
+            var minDist = Mathf.Infinity;
+            IStackable bestHit = null;
+            foreach(var hit in hits)
+            {
+                var stackable = hit.transform.GetComponentInParent<IStackable>();
+                if(stackable == null || stackable == (IStackable)this)
+                {
+                    continue;
+                }
+
+                if(hit.distance < minDist)
+                {
+                    minDist = hit.distance;
+                    bestHit = stackable;
+                }
+            }
+
+            if(bestHit != null)
+            {
+                Stacker.Stack(bestHit, this);
+            }
+        }
     }
 
     //called when this item is first crafted
@@ -283,38 +333,34 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
     {
         SetPartialCraftVFX(false);
         SetCollisionEnabled(false);
-        if(CraftingItemDeck.InstExists())
-        {
-            CraftingItemDeck.Inst.AddItemToBottomDeck(this);
-        }
         OnUsedInSuccessfulCraft?.Invoke();
-        //Destroy(gameObject);
+        Destroy(gameObject);
     }
 
     public void SetState(State state)
     {
+        this.state = state;
         SetPhysAndCollision(state == State.Active);
         SetCanBeUsedInCraft(state == State.Active);
         SetAcceptInput(state == State.Draggable || state == State.Active);
     }
 
-    public void SetPosition(Vector3 position)
+    private void SetCanBeUsedInCraft(bool enabled)
     {
-        transform.position = position;
-    }
+        canBeUsedInCraft = enabled;
 
-    public void SetRotation(Quaternion rotation)
-    {
-        transform.rotation = rotation;
+        if (!canBeUsedInCraft)
+        {
+            RemoveAllItemContacts();
+        }
     }
-
     private void SetCollisionEnabled(bool enabled)
     {
-        if(coll)
+        if (coll)
         {
             coll.enabled = enabled;
 
-            if(!enabled)
+            if (!enabled)
             {
                 RemoveAllItemContacts();
             }
@@ -337,35 +383,119 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener
         this.acceptInput = acceptInput;
         dragHandler.SetDragEnabled(acceptInput);
 
-        if(!acceptInput)
+        if (!acceptInput)
         {
             RemoveAllItemContacts();
         }
     }
 
-    private void SetCanBeUsedInCraft(bool enabled)
+    public void AnimateTo(Vector3 position_WS, Quaternion rotation_WS, float time, bool returnToPrevStateOnEndAnim = true)
     {
-        canBeUsedInCraft = enabled;
+       StartCoroutine(AnimateToRoutine(position_WS, rotation_WS, time, returnToPrevStateOnEndAnim));
+    }
 
-        if(!canBeUsedInCraft)
+    public IEnumerator AnimateToRoutine(Vector3 position_WS, Quaternion rotation_WS, float time, bool returnToPrevStateOnEndAnim = true)
+    {
+        var prevState = state;
+        SetState(State.Animatable);
+
+        if(time <= 0f)
         {
-            RemoveAllItemContacts();
+            transform.position = position_WS;
+            transform.rotation = rotation_WS;
         }
+        else
+        {
+            if (tweenSequence == null || !tweenSequence.active)
+            {
+                tweenSequence = DOTween.Sequence(transform);
+            }
+
+            tweenSequence.Append(transform.DOMove(position_WS, time));
+            tweenSequence.Join(transform.DORotate(rotation_WS.eulerAngles, time));
+
+            yield return tweenSequence.WaitForCompletion();
+
+            //necessary?
+            transform.position = position_WS;
+            transform.rotation = rotation_WS;
+        }
+
+        if (returnToPrevStateOnEndAnim)
+        {
+            SetState(prevState);
+        }
+    }
+
+    private void SetInspecting(bool inspecting)
+    {
+        var wasInspecting = isInspecting;
+        isInspecting = inspecting;
+        if (inspecting && !wasInspecting)
+        {
+            StartCoroutine(DoInspectRoutine());
+        }
+    }
+
+    private IEnumerator DoInspectRoutine()
+    {
+        //TODO: placeholder position and rotation!
+        var cam = cursor.Cam;
+        var targetPos = cam.transform.position + (cam.transform.forward * 2f);
+        var targetRotation = Quaternion.identity;
+
+        var prevPos = transform.position;
+        var prevRotation = transform.rotation;
+        var prevState = state;
+
+        yield return AnimateToRoutine(targetPos, targetRotation, 0.5f, returnToPrevStateOnEndAnim: false);
+        
+        if(nameTextFade)
+        {
+            nameTextFade.EnableAndPlayInClip();
+        }
+
+        while(isInspecting)
+        {
+            
+            transform.position = targetPos;
+            transform.rotation = targetRotation;
+            yield return null;
+        }
+        
+        if(nameTextFade)
+        {
+            nameTextFade.PlayClipThenDisable();
+        }
+
+        //TODO: fix grab ending on this (due to going into animation state) and/or think about desired behaviour
+        yield return AnimateToRoutine(prevPos, prevRotation, 0.5f, returnToPrevStateOnEndAnim: false);
+        SetState(prevState);
     }
 
     public void OnCursorEvent(Cursor.EventID e)
     {
-        if (e == Cursor.EventID.EnterElement)
+        if (e == Cursor.EventID.RightClickDown)
         {
-            isHovered = true;
+            //inspect item while holding right-click
+            if (cursor.CurrentDragTarget == dragHandler)
+            {
+                SetInspecting(true);
+            }
         }
-        else if (e == Cursor.EventID.ExitElement)
+        else if(e == Cursor.EventID.RightClickUp)
         {
-            isHovered = false;
+            SetInspecting(false);
         }
-        else if (e == Cursor.EventID.RightClickDown)
-        {
-            //inspect item while holding right-click?
-        }
+    }
+
+    public void OnAddedToStack()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void OnRemovedFromStack()
+    {
+        throw new NotImplementedException();
     }
 }

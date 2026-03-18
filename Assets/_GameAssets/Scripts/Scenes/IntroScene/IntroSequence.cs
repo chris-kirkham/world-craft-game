@@ -16,14 +16,14 @@ public class IntroSequence : MonoBehaviour
     {
         if(playerCam)
         {
-            playerCam.SetMovementEnabled(false);
+            //playerCam.SetMovementEnabled(false, false);
         }
         else
         {
             playerCam = FindFirstObjectByType<CameraMovement>();
             if(playerCam)
             {
-                playerCam.SetMovementEnabled(false);
+                //playerCam.SetMovementEnabled(false, false);
             }
             else
             {
@@ -44,7 +44,7 @@ public class IntroSequence : MonoBehaviour
         //spawn copies of chosen item at spawn positions
         foreach(var t in itemSpawnTransforms)
         {
-            CraftingManager.Inst.InstantiateItem(item.Data, t.position, t.rotation);
+            CraftingManager.Inst.SpawnItem(item.Data, t.position, t.rotation);
         }
 
         //delete starting items
@@ -56,7 +56,7 @@ public class IntroSequence : MonoBehaviour
         topText.PlayClipThenDisable();
 
         postIntroLighting.SetActive(true);
-        playerCam.SetMovementEnabled(true);
+        //playerCam.SetMovementEnabled(true, true);
         enabled = false;
     }
 

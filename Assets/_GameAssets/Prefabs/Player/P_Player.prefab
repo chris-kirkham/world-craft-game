@@ -419,13 +419,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cam: {fileID: 8597685863066880409}
+  allowMovement: 0
+  moveSpeed: 0.05
+  allowZoom: 0
   minZoom: 0.1
   maxZoom: 10
   zoomSpeed: 0.1
   viewCentre: {x: 0, y: 2, z: 0}
   viewSize: {x: 20, y: 7, z: 15}
-  moveSpeed: 0.05
-  moveCameraWhenCursorAtScreenEdge: 1
+  moveCameraWhenCursorAtScreenEdge: 0
   edgeZoneStartX: 0.9
   edgeZoneStartY: 0.8
   edgeDragSpeedCurve:
@@ -590,7 +592,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &6900910734765245377
 RectTransform:
   m_ObjectHideFlags: 0

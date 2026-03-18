@@ -429,7 +429,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         var ingredientsList = new List<CraftingItem>(ingredients);
         var numIngredients = ingredients.Count;
 
-        var centrePos = crafterBoard ? crafterBoard.CraftResultSpawnPos : Vector3.zero;
+        var fusionPos = crafterBoard ? crafterBoard.CraftIngredientFusionPos : Vector3.zero;
 
         var angleInc = 360f / ingredients.Count;
         var upInc = Vector3.up * 0.1f; //add a small vertical increment to each card to avoid z-fighting (and to look nice)
@@ -441,7 +441,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         for (int i = 0; i < numIngredients; i++)
         {
             startPositions[i] = ingredientsList[i].transform.position + (upInc * i); 
-            targetPositions[i] = centrePos + (upInc * i) + (Quaternion.Euler(0f, angleInc * i, 0f) * Vector3.left * radius);
+            targetPositions[i] = fusionPos + (upInc * i) + (Quaternion.Euler(0f, angleInc * i, 0f) * Vector3.left * radius);
         }
 
         const float lerpToOuterTime = 0.75f;
@@ -466,7 +466,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
             t = Mathf.Clamp01(t + (Time.deltaTime / convergeInCentreTime));
             for(int i = 0; i < numIngredients; i++)
             {
-                ingredientsList[i].transform.position = Vector3.Slerp(targetPositions[i], centrePos + (upInc * i), t);
+                ingredientsList[i].transform.position = Vector3.Slerp(targetPositions[i], fusionPos + (upInc * i), t);
             }
 
             yield return null;
@@ -484,86 +484,42 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         var craftInstantiateAngleInc = 360f / numToSpawn;
         int spawnCount = 0;
 
+        yield return new WaitForSeconds(multiItemSpawnDelay);
+
+        foreach (var ingredient in ingredientsList)
+        {
+            ingredient.OnCraftAttempt(CraftingResultState.SuccessfulCraft);
+        }
+
+        var spawnOrigin = crafterBoard ? crafterBoard.CraftResultSpawnPos : Vector3.zero;
         for(int i = 0; i < successfulCrafts.Count; i++)
         {
             Debug.Log($"Successfully crafted {successfulCrafts[i].ItemName} from ingredients " + string.Join(", ", ingredients) + "!");
 
             //Instantiate new item
             var result = successfulCrafts[i];
-            //var posOffset = Quaternion.Euler(0f, (angleInc * spawnCount) + newItemStartAngle, 0f) * newItemOffset;
             var posOffset = Vector3.right * 1.25f;
-            //SpawnItem(result, centrePos + posOffset);
-            SpawnItem(result, centrePos + (posOffset * spawnCount));
+            yield return SpawnItemAnimated(result, fusionPos, spawnOrigin + (posOffset * spawnCount), multiItemSpawnDelay);
+            //SpawnItemToGrid(result, fusionPos, Quaternion.identity, multiItemSpawnDelay);
             spawnCount++;
 
             //TODO: "new WaitForSeconds" allocates - make a helper class to get WaitForSecondses without allocation
-            yield return new WaitForSeconds(multiItemSpawnDelay); 
+            //yield return new WaitForSeconds(multiItemSpawnDelay); 
 
             //Instantiate any extra products
             if (result.ExtraProducts.Count > 0)
             {
-                foreach (var product in result.ExtraProducts)
+                foreach (var extraProduct in result.ExtraProducts)
                 {
                     //spawn item
-                    //posOffset = Quaternion.Euler(0f, (angleInc * spawnCount) + newItemStartAngle, 0f) * newItemOffset;
-                    //var item = InstantiateItem(product, centrePos + posOffset);
-                    var item = InstantiateItem(product, centrePos + (posOffset * spawnCount));
-                    //CraftingItemDeck.Inst?.AddItemToTopDeck(item);
+                    yield return SpawnItemAnimated(extraProduct, fusionPos, spawnOrigin + (posOffset * spawnCount), multiItemSpawnDelay);
+                    //SpawnItemToGrid(extraProduct, fusionPos, Quaternion.identity, multiItemSpawnDelay);
                     spawnCount++;
-                    Debug.Log($"Spawned extra product {product.ItemName} from craft result {result.ItemName}!");
-
-                    yield return new WaitForSeconds(multiItemSpawnDelay);
+                    Debug.Log($"Spawned extra product {extraProduct.ItemName} from craft result {result.ItemName}!");
+                    //yield return new WaitForSeconds(multiItemSpawnDelay);
                 }
             }
         }
-
-        foreach (var ingredient in ingredientsList)
-        {
-            ingredient.OnCraftAttempt(CraftingResultState.SuccessfulCraft);
-        }
-    }
-
-    private void SpawnItem(CraftingItemData itemData, Vector3 targetSpawnPos)
-    {
-        InstantiateItem(itemData, targetSpawnPos);
-    }
-
-    private Vector3 GetFreeSpawnPosition(Vector3 targetPos)
-    {
-        var aabbExtents = new Vector3(1f, 0.1f, 1.5f); //TODO: get extents from item collider? 
-        var aabbExtentsMag = aabbExtents.magnitude;
-
-        Debug.DrawRay(targetPos + RaycastStartUpOffset, Vector3.down * MaxRaycastDist, Color.yellow, 10f);
-
-        const int maxTries = 16;
-        var tries = 0;
-        var spawnPos = targetPos;
-        var isSpawnObstructed = false;
-        do
-        {
-            var startPos = spawnPos + RaycastStartUpOffset;
-            isSpawnObstructed = Physics.BoxCast(startPos, aabbExtents / 2f, Vector3.down, Quaternion.identity, MaxRaycastDist, itemLayerMask);
-
-            if(tries > 0)
-            {
-                Debug.DrawRay(startPos, Vector3.down * MaxRaycastDist, isSpawnObstructed ? Color.red : Color.green, 10f);
-            }
-
-            if (!isSpawnObstructed)
-            {
-                break;
-            }
-
-            tries++;
-            const float maxSearchRadiusMult = 4f;
-            var tryPct = tries / (float)maxTries;
-            var dist = aabbExtentsMag * maxSearchRadiusMult * tryPct;
-            var offset = Quaternion.Euler(0f, 720f * tryPct, 0f) * Vector3.forward * dist;
-            spawnPos = targetPos + offset;
-        }
-        while(isSpawnObstructed && tries < maxTries);
-
-        return spawnPos;
     }
 
     private void TryCraftAllItemContacts()
@@ -598,16 +554,42 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         }
     }
 
-    /// <summary>Instantiate a crafting item directly</summary>
-    /// <param name="wasCrafted">if true, call the item's on-crafted callback</param>
-    public CraftingItem InstantiateItem(CraftingItemData itemData, Vector3 position, bool wasCrafted = true)
+    private IEnumerator SpawnItemAnimated(CraftingItemData itemData, Vector3 startPos_WS, Vector3 endPos_WS, float time)
     {
-        return InstantiateItem(itemData, position, Quaternion.identity);
+        yield return SpawnItemAnimated(itemData, startPos_WS, endPos_WS, Quaternion.identity, Quaternion.identity, time);
+    }
+
+    private IEnumerator SpawnItemAnimated(
+        CraftingItemData itemData,
+        Vector3 startPos_WS, 
+        Vector3 endPos_WS, 
+        Quaternion startRotation_WS, 
+        Quaternion endRotation_WS, 
+        float time)
+    {
+        var item = SpawnItem(itemData, startPos_WS, startRotation_WS);
+        yield return item.AnimateToRoutine(endPos_WS, endRotation_WS, time);
+    }
+
+    private void SpawnItemToGrid(CraftingItemData itemData, Vector3 startPos_WS, Quaternion startRotation_WS, float time)
+    {
+        var item = SpawnItem(itemData, startPos_WS, startRotation_WS);
+        if(crafterBoard)
+        {
+            crafterBoard.MoveItemToGrid(item);
+        }
     }
 
     /// <summary>Instantiate a crafting item directly</summary>
     /// <param name="wasCrafted">if true, call the item's on-crafted callback</param>
-    public CraftingItem InstantiateItem(CraftingItemData itemData, Vector3 position, Quaternion rotation, bool wasCrafted = true)
+    public CraftingItem SpawnItem(CraftingItemData itemData, Vector3 position, bool wasCrafted = true)
+    {
+        return SpawnItem(itemData, position, Quaternion.identity);
+    }
+
+    /// <summary>Instantiate a crafting item directly</summary>
+    /// <param name="wasCrafted">if true, call the item's on-crafted callback</param>
+    public CraftingItem SpawnItem(CraftingItemData itemData, Vector3 position, Quaternion rotation, bool wasCrafted = true)
     {
         var item = Instantiate<CraftingItem>(thumbnailPrefab, position, rotation);
         item.Data = itemData;
@@ -664,7 +646,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         {
             yield return new WaitForSeconds(Random.Range(helperSpawnMinTime, helperSpawnMaxTime));
 
-            InstantiateItem(randomProducts[Random.Range(0, randomProducts.Count)],
+            SpawnItem(randomProducts[Random.Range(0, randomProducts.Count)],
                 crafterBoard.GetRandomPointOnBoard(padding: 1f) + Vector3.up * 10f);
         }
     }

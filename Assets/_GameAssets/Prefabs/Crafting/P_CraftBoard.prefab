@@ -118,7 +118,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4873575646185274123}
   m_Layer: 0
-  m_Name: CardStackOrigin
+  m_Name: GridOrigin
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -133,7 +133,7 @@ Transform:
   m_GameObject: {fileID: 3975725667240977679}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -5, y: 0, z: 1}
+  m_LocalPosition: {x: -4.375, y: 0, z: -1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -187,7 +187,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &5682247546585377029
 Transform:
   m_ObjectHideFlags: 0
@@ -240,6 +240,7 @@ Transform:
   - {fileID: 637607519705211944}
   - {fileID: 7361313674574127041}
   - {fileID: 4873575646185274123}
+  - {fileID: 960211814818971593}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &8868163458549237221
@@ -261,9 +262,11 @@ MonoBehaviour:
   - {fileID: 1758898064980167450}
   - {fileID: 849387341088071626}
   - {fileID: 8299378777050837574}
-  cardStackGridOrigin: {fileID: 4873575646185274123}
-  stackGridCells: {x: 8, y: 4}
-  stackGridCellSize: {x: 1.5, y: 1.75}
+  gridOrigin: {fileID: 4873575646185274123}
+  gridCells: {x: 8, y: 4}
+  gridCellSize: {x: 1.25, y: 1.5}
+  gridCellDeckPrefab: {fileID: 6312110462525338186, guid: 6d457d275a0868943a3ecd7a06235147, type: 3}
+  craftIngredientFusionPoint: {fileID: 960211814818971593}
   craftResultSpawnPoint: {fileID: 5022242932279480694}
 --- !u!1 &7302917497607129110
 GameObject:
@@ -373,6 +376,37 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &7739891255268870289
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 960211814818971593}
+  m_Layer: 0
+  m_Name: CraftIngredientFusionPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &960211814818971593
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7739891255268870289}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 2, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 145744188243229057}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7964033824326110905
 GameObject:
   m_ObjectHideFlags: 0
@@ -577,7 +611,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 7f9c9a52b6287054db3060899bcb80c0, type: 2}
+  - {fileID: 2100000, guid: d795b8ba06f410f43866f9877188632a, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

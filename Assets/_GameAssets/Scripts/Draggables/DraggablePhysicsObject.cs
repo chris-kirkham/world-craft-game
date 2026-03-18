@@ -16,6 +16,8 @@ public class DraggablePhysicsObject : DraggableElement
     //hack to prevent... this re-enabling physics when it shouldn't
     public bool ReEnablePhysicsOnEndDrag { get; set; } = true;
 
+    private Vector3? overrideDragPosition = null;
+
     protected override void OnEnable()
     {
         base.OnEnable();
@@ -69,21 +71,44 @@ public class DraggablePhysicsObject : DraggableElement
     {
         if(rb && isDragging)
         {
-            var cam = Cursor.Inst.Cam;
-            var cursorPos = Cursor.Inst.ClampedPosition_SS;
-
-            //get distance above ground/other objects
-            var distFromCamera = targetDistanceAboveGround;
-            if(Physics.Raycast(
-                cam.ScreenPointToRay(cursorPos), out var hit, MaxRaycastDist, groundRaycastMask, QueryTriggerInteraction.Ignore))
+            if(overrideDragPosition.HasValue)
             {
-                var hitPointWithHeightOffset = hit.point + (Vector3.up * targetDistanceAboveGround);
-                distFromCamera = Mathf.Max(MinDistFromCamera, Vector3.Distance(cam.transform.position, hitPointWithHeightOffset));
-                var targetPos_WS = hit.point + ((cam.transform.position - hit.point).normalized * targetDistanceAboveGround);
-
-                //rb.MovePosition(targetPos_WS);
-                transform.position = targetPos_WS;
+                transform.position = overrideDragPosition.Value;
             }
+            else
+            {
+                transform.position = GetTargetPosition();
+            }
+        }
+    }
+
+    private Vector3 GetTargetPosition()
+    {
+        var cam = Cursor.Inst.Cam;
+        var cursorPos = Cursor.Inst.ClampedPosition_SS;
+
+        //get distance above ground/other objects
+        var distFromCamera = targetDistanceAboveGround;
+        if (Physics.Raycast(
+            cam.ScreenPointToRay(cursorPos), out var hit, MaxRaycastDist, groundRaycastMask, QueryTriggerInteraction.Ignore))
+        {
+            var hitPointWithHeightOffset = hit.point + (Vector3.up * targetDistanceAboveGround);
+            distFromCamera = Mathf.Max(MinDistFromCamera, Vector3.Distance(cam.transform.position, hitPointWithHeightOffset));
+            var targetPos_WS = hit.point + ((cam.transform.position - hit.point).normalized * targetDistanceAboveGround);
+
+            //rb.MovePosition(targetPos_WS);
+            return targetPos_WS;
+        }
+
+        Debug.LogError($"No valid drag position found! Returning (0,0,0)");
+        return Vector3.zero;
+    }
+
+    public void SetDragPositionOverride(Vector3? overridePos_WS)
+    {
+        if(overridePos_WS.HasValue)
+        {
+
         }
     }
 }

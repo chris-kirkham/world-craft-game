@@ -1,4 +1,6 @@
+using DG.Tweening;
 using System;
+using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -13,6 +15,7 @@ public class CrafterPlacementZone : MonoBehaviour, ICursorEventListener
 
     [SerializeField] private Transform zonePivot;
     [SerializeField] private Vector2 zoneSize;
+    [SerializeField] private float animateItemToPlacementPointTime = 0.5f;
 
     private CraftingItem currentItem;
     private State state;
@@ -76,19 +79,24 @@ public class CrafterPlacementZone : MonoBehaviour, ICursorEventListener
                 StartPlacementPreview();
                 break;
             case State.ItemPlaced:
-                Debug.Assert(currentItem);
-                if (currentItem)
-                {
-                    currentItem.SetState(CraftingItem.State.Animatable);
-                    currentItem.SetPosition(zonePivot.position);
-                    currentItem.SetRotation(zonePivot.rotation);
-                    currentItem.SetState(CraftingItem.State.Draggable);
-                    ItemPlaced?.Invoke();
-                }
+                StartCoroutine(PlaceItemRoutine());
                 break;
             default:
                 break;
         }
+    }
+
+    private IEnumerator PlaceItemRoutine()
+    {
+        if (!currentItem)
+        {
+            Debug.Assert(currentItem);
+            yield break;
+        }
+     
+        yield return currentItem.AnimateToRoutine(zonePivot.position, zonePivot.rotation, animateItemToPlacementPointTime);
+        Debug.Log("Item animated!");
+        ItemPlaced?.Invoke();
     }
 
     private void SetItem(CraftingItem item)

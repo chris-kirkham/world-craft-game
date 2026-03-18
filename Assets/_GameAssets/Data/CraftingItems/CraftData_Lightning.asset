@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemName: Lightning
   craftingAliases: []
-  thumbnailTex: {fileID: 2800000, guid: 3940234b1c0d3744f92773002868c30f, type: 3}
+  thumbnailTex: {fileID: 2800000, guid: 39860c7d78c5d6945be3651001eaab50, type: 3}
   contentPrefab: {fileID: 0}
   prerequisites:
   - {fileID: 11400000, guid: 2be091212d8dfc24bac46b5517798562, type: 2}

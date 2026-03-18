@@ -354,13 +354,11 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
 
     public void AddToDragList(DraggableElement draggable)
     {
-        Debug.Log($"Adding {draggable.gameObject.name} to drag list at frame {Time.frameCount}!");
         dragRequests.Add(draggable);
     }
 
     public void RemoveFromDragList(DraggableElement draggable)
     {
-        Debug.Log($"Removing {draggable.gameObject.name} from drag list at frame {Time.frameCount}!");
         dragRequests.Remove(draggable);
     }
 

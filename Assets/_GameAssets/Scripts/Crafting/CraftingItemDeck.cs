@@ -1,8 +1,9 @@
+using Mono.Cecil.Cil;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CraftingItemDeck : SingletonMonoBehaviour<CraftingItemDeck>, ICursorEventListener
+public class CraftingItemDeck : MonoBehaviour, ICursorEventListener
 {
     //ADDING/REMOVING ITEMS: should the item be told when it's added/removed and handle toggling physics/input itself?
     //That way would make it easier to do animations/coroutine stuff since it would stop being the deck's responsibility
@@ -12,6 +13,7 @@ public class CraftingItemDeck : SingletonMonoBehaviour<CraftingItemDeck>, ICurso
     [SerializeField] private float itemHeight = 0.1f;
     [SerializeField] private float itemZOffset = 0.05f;
     [SerializeField] private bool populateOnEnable;
+    [SerializeField] private float animateItemToDeckTime = 0.4f;
 
     private LinkedList<CraftingItem> deck = new LinkedList<CraftingItem>();
 
@@ -68,17 +70,28 @@ public class CraftingItemDeck : SingletonMonoBehaviour<CraftingItemDeck>, ICurso
         }
     }
 
+    public CraftingItem PeekTopItem()
+    {
+        return deck.Count > 0 ? deck.Last.Value : null;
+    }
+
+    public bool IsEmpty()
+    {
+        return deck.Count == 0;
+    }
+
     public void AddItemToTopDeck(CraftingItem item)
     {
         OnItemAdded(item);
         deck.AddLast(item);
-        MoveItemToDeck(item.transform, transform.position 
+        MoveItemToDeck(item, transform.position 
             + (deck.Count * itemHeight * Vector3.up) 
             + (deck.Count * itemZOffset * Vector3.forward));
     }
 
     public void AddItemToBottomDeck(CraftingItem item)
     {
+        Debug.Log($"Adding item {item.gameObject.name} to bottom of deck!");
         var itemUpInc = Vector3.up * itemHeight;
         foreach(var deckItem in deck)
         {
@@ -88,7 +101,7 @@ public class CraftingItemDeck : SingletonMonoBehaviour<CraftingItemDeck>, ICurso
 
         OnItemAdded(item);
         deck.AddFirst(item);
-        MoveItemToDeck(item.transform, transform.position);
+        MoveItemToDeck(item, transform.position);
     }
 
     private void OnItemAdded(CraftingItem item)
@@ -103,11 +116,9 @@ public class CraftingItemDeck : SingletonMonoBehaviour<CraftingItemDeck>, ICurso
         item.SetState(CraftingItem.State.Active);
     }
 
-    private void MoveItemToDeck(Transform item, Vector3 targetPos)
+    private void MoveItemToDeck(CraftingItem item, Vector3 targetPos)
     {
-        item.transform.position = targetPos;
-        item.transform.rotation = transform.rotation;
-        //StartCoroutine(AnimateItemToDeckRoutine(item, targetPos, transform.rotation));
+        item.AnimateTo(targetPos, transform.rotation, animateItemToDeckTime);
     }
 
     private void PopulateDeck(CraftingItemDatabase deckItems)
@@ -122,7 +133,7 @@ public class CraftingItemDeck : SingletonMonoBehaviour<CraftingItemDeck>, ICurso
         for(int i = 0; i < deckItems.ItemList.Count; i++)
         {
             var itemData = deckItems.ItemList[i];
-            var item = CraftingManager.Inst.InstantiateItem(itemData, transform.position);
+            var item = CraftingManager.Inst.SpawnItem(itemData, transform.position);
             item.transform.parent = transform;
             AddItemToTopDeck(item);
         }
@@ -172,30 +183,6 @@ public class CraftingItemDeck : SingletonMonoBehaviour<CraftingItemDeck>, ICurso
         var item = deck.Last.Value;
         OnItemRemoved(item);
         deck.RemoveLast();
-    }
-
-    private IEnumerator AnimateItemToDeckRoutine(Transform item, Vector3 targetPos, Quaternion targetRotation)
-    {
-        //move y position first (so card doesn't phase through others in deck) and rotate to correct orientation
-        var targetYPos = new Vector3(item.position.x, targetPos.y, item.position.z);
-        var startPos = item.position;
-        var startRotation = item.rotation;
-        float t;
-        const float yMoveTime = 0.25f;
-        for(t = 0f; t <= yMoveTime; t = Mathf.Min(yMoveTime, t + Time.deltaTime))
-        {
-            item.position = Vector3.Lerp(startPos, targetYPos, t);
-            item.rotation = Quaternion.Lerp(startRotation, targetRotation, t);
-            yield return null;
-        }
-
-        startPos = item.position;
-        const float xzMoveTime = 1f;
-        for(t = 0f; t <= xzMoveTime; t = Mathf.Min(xzMoveTime, t + Time.deltaTime))
-        {
-            item.position = Vector3.Lerp(startPos, targetPos, t);
-            yield return null;
-        }
     }
 
     public void OnCursorEvent(Cursor.EventID e)

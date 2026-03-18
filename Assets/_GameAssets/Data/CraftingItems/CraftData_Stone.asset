@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemName: Stone
   craftingAliases: []
-  thumbnailTex: {fileID: 0}
+  thumbnailTex: {fileID: 2800000, guid: f30a28e4e09f0574c838abca21b47a77, type: 3}
   contentPrefab: {fileID: 0}
   prerequisites:
   - {fileID: 11400000, guid: 33fbd6f9fc3345f4c842fd6e648b25e7, type: 2}

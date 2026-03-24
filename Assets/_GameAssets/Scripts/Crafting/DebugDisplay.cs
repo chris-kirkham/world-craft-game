@@ -23,7 +23,7 @@ public class DebugDisplay : MonoBehaviour
 
     }
 
-    public void SetCraftingDebugInfo(HashSet<CraftingManager.ItemContactsGroup> itemContacts)
+    public void SetCraftingDebugInfo(HashSet<ItemContactsTracker.ItemContactsGroup> itemContacts)
     {
         craftingDebugInfo = "Touching items:";
         foreach(var contactGroup in itemContacts)

@@ -8,7 +8,7 @@ public class CrafterBoard : SingletonMonoBehaviour<CrafterBoard>
     [SerializeField] private List<CrafterPlacementZone> placementPoints;
 
     [Header("Grid")]
-    [SerializeField] private Transform gridOrigin;
+    [SerializeField] private Transform gridCentre;
     [SerializeField] private Vector2Int gridCells;
     [SerializeField] private Vector2 gridCellSize;
     [SerializeField] private CraftingItemDeck gridCellDeckPrefab;
@@ -87,18 +87,18 @@ public class CrafterBoard : SingletonMonoBehaviour<CrafterBoard>
     //TODO: prototype, optimise!!
     public void MoveItemToGrid(CraftingItem item, bool stackSameItems = true)
     {
-        var firstEmpty = Vector2Int.zero;
+        Vector2Int? firstEmpty = null;
 
         //loop through decks in grid; add item to stack of same items if desired and if one exists,
         //otherwise add item to the first empty deck
-        for(int x = 0; x < grid.GetLength(0); x++)
+        for(int y = 0; y < gridCells.y; y++)
         {
-            for(int y = 0; y < grid.GetLength(1); y++)
+            for(int x = 0; x < gridCells.x; x++)
             {
                 var deck = grid[x, y];
                 if (deck.IsEmpty())
                 {
-                    if (firstEmpty == Vector2Int.zero)
+                    if (firstEmpty == null)
                     {
                         firstEmpty = new Vector2Int(x, y);
                         continue;
@@ -112,18 +112,24 @@ public class CrafterBoard : SingletonMonoBehaviour<CrafterBoard>
             }
         }
 
-        if (!grid[firstEmpty.x, firstEmpty.y].IsEmpty())
+        if(firstEmpty.HasValue)
+        {
+            grid[firstEmpty.Value.x, firstEmpty.Value.y].AddItemToTopDeck(item);
+        }
+        else
         {
             Debug.LogError($"No empty cell found in deck! What to do here???");
         }
-
-        grid[firstEmpty.x, firstEmpty.y].AddItemToTopDeck(item);
     }
 
     private Vector3 GetGridCellPosition(int x, int y)
     {
-        var offset = new Vector3(gridCellSize.x * x, 0f, gridCellSize.y * y);
-        return gridOrigin.position + offset;
+        var cellHalfSize = gridCellSize / 2f;
+        var halfSize = new Vector2(cellHalfSize.x * gridCells.x, cellHalfSize.y * gridCells.y);
+        var centrePos = gridCentre.position;
+        var min = new Vector3(centrePos.x - halfSize.x, centrePos.y, centrePos.z - halfSize.y);
+        var offset = new Vector3((gridCellSize.x * x) + cellHalfSize.x, 0f, (gridCellSize.y * y) + cellHalfSize.y);
+        return min + offset;
     }
 
     public Vector3 GetRandomPointOnBoard(float padding)
@@ -142,7 +148,7 @@ public class CrafterBoard : SingletonMonoBehaviour<CrafterBoard>
 
     private void OnDrawGizmos()
     {
-        if(gridOrigin)
+        if(gridCentre)
         {
             //draw board borders and centre
             Gizmos.matrix = Matrix4x4.identity;
@@ -150,12 +156,13 @@ public class CrafterBoard : SingletonMonoBehaviour<CrafterBoard>
             Gizmos.DrawSphere(centre, 0.5f);
             Gizmos.DrawWireCube(centre, new Vector3(size.x, 0f, size.y));
 
-            for (int x = 0; x < gridCells.x; x++)
+            for (int y = 0; y < gridCells.y; y++)
             {
-                for (int y = 0; y < gridCells.y; y++)
+                for (int x = 0; x < gridCells.x; x++)
                 {
+                    Gizmos.color = new Color(x / (float)gridCells.x, y / (float)gridCells.y, 0f);
                     var pos = GetGridCellPosition(x, y);
-                    Gizmos.DrawSphere(pos, 0.5f);
+                    Gizmos.DrawSphere(pos, 0.2f);
                     Gizmos.DrawWireCube(pos, new Vector3(gridCellSize.x, 0f, gridCellSize.y));
                 }
             }

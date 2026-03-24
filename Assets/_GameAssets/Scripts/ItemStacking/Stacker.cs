@@ -1,3 +1,4 @@
+using DG.Tweening;
 using UnityEngine;
 
 public class Stacker : MonoBehaviour
@@ -25,7 +26,7 @@ public class Stacker : MonoBehaviour
         }
 
         topTform.SetParent(stacker.transform, worldPositionStays: true);
-        topTform.position = bottomTform.position + top.StackingOffset;
+        topTform.DOMove(bottomTform.position + top.StackingOffset, 0.5f);
         top.CurrentStacker = stacker;
     }
 

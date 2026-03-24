@@ -127,8 +127,20 @@ PlayableDirector:
     value: {fileID: 5867373962503990203}
   - key: {fileID: -6954383560043858007, guid: 9a7d3c00fb3403b47ac2fa2364261805, type: 2}
     value: {fileID: 805780739426846573}
+  - key: {fileID: -1641781018796364417, guid: 9a7d3c00fb3403b47ac2fa2364261805, type: 2}
+    value: {fileID: 4196128510917678563}
+  - key: {fileID: -6846462142632257783, guid: 9a7d3c00fb3403b47ac2fa2364261805, type: 2}
+    value: {fileID: 6095463447217150498}
+  - key: {fileID: -3485804687636422162, guid: 9a7d3c00fb3403b47ac2fa2364261805, type: 2}
+    value: {fileID: 5076261990355187499}
+  - key: {fileID: -4948076082397366114, guid: 9a7d3c00fb3403b47ac2fa2364261805, type: 2}
+    value: {fileID: 2031455186408348669}
   m_ExposedReferences:
-    m_References: []
+    m_References:
+    - 0b5f234bbd8d229429ac1342fd2fc732: {fileID: 6778098213755058378}
+    - 1eeee04d0434ea74b9a253eb031b3b89: {fileID: 2334591898369430444}
+    - 4c8461893ecd52b47bb6a7800ab909be: {fileID: 4689932987167497033}
+    - 552dedc3a86458742808354483d9d98a: {fileID: 2334591898369430444}
 --- !u!114 &5362927751409417758
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -154,6 +166,8 @@ MonoBehaviour:
   - {fileID: 4689932987167497033}
   - {fileID: 6763954335828386370}
   - {fileID: 6778098213755058378}
+  crafterBoard: {fileID: 0}
+  postIntroLighting: {fileID: 0}
 --- !u!1 &3900115023803257934
 GameObject:
   m_ObjectHideFlags: 0
@@ -398,7 +412,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1007614292472402940, guid: 487d4effa66f6654aabc29446e8724f2, type: 3}
       propertyPath: m_text
-      value: How was the world formed?
+      value: How did the universe form?
       objectReference: {fileID: 0}
     - target: {fileID: 1007614292472402940, guid: 487d4effa66f6654aabc29446e8724f2, type: 3}
       propertyPath: m_fontSize
@@ -510,7 +524,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8441693127499205813, guid: 487d4effa66f6654aabc29446e8724f2, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -804,6 +818,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Item_Water
       objectReference: {fileID: 0}
+    - target: {fileID: 4413316110077644792, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7362184512882329581, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
       propertyPath: m_text
       value: Water
@@ -1027,6 +1045,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Item_Air
       objectReference: {fileID: 0}
+    - target: {fileID: 4413316110077644792, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7362184512882329581, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
       propertyPath: m_text
       value: Air
@@ -1120,6 +1142,10 @@ PrefabInstance:
     - target: {fileID: 4413316110077644792, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
       propertyPath: m_Name
       value: Item_Earth
+      objectReference: {fileID: 0}
+    - target: {fileID: 4413316110077644792, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7527759089948149479, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
       propertyPath: itemData
@@ -1339,6 +1365,10 @@ PrefabInstance:
     - target: {fileID: 4413316110077644792, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
       propertyPath: m_Name
       value: Item_Fire
+      objectReference: {fileID: 0}
+    - target: {fileID: 4413316110077644792, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7362184512882329581, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
       propertyPath: m_text

@@ -13,7 +13,7 @@ public abstract class SingletonMonoBehaviour<T> : MonoBehaviour where T : MonoBe
                 return _inst;
             }
 
-            Debug.LogError($"No instance of {typeof(T).Name} found!");
+            Debug.LogError($"No instance of {typeof(T).Name} found! ");
             return null;
         }
     }

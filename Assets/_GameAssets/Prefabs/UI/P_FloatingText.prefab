@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 2332552631947658464}
   - component: {fileID: 5309277957613198270}
   m_Layer: 0
-  m_Name: P_IntroSequenceText
+  m_Name: P_FloatingText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

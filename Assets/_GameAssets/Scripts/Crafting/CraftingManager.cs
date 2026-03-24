@@ -3,60 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Playables;
+using UnityEngine.Serialization;
 
-public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorEventListener
+public class CraftingManager : SingletonMonoBehaviour<CraftingManager>
 {
-    public class ItemContactsGroup
-    {
-        private HashSet<CraftingItem> items;
-
-        public HashSet<CraftingItem> Items => items;
-        public int Count => items.Count;
-
-        public ItemContactsGroup(HashSet<CraftingItem> items)
-        {
-            this.items = items;
-        }
-
-        public void Add(CraftingItem item)
-        {
-            items.Add(item);
-        }
-
-        public void Remove(CraftingItem item)
-        {
-            items.Remove(item);
-        }
-
-        public bool Contains(CraftingItem item)
-        {
-            return items.Contains(item);
-        }
-
-        public override bool Equals(object obj)
-        {
-            var other = (ItemContactsGroup)obj;
-            if(other != null)
-            {
-                return items.SetEquals(other.items);
-            }
-
-            return base.Equals(obj);
-        }
-
-        public override int GetHashCode()
-        {
-            //hmm
-            int hash = 19;
-            foreach(var item in items)
-            {
-                hash += 31 * item.GetHashCode();
-            }
-
-            return hash;
-        }
-    }
-
     public enum CraftingResultState
     {
         None,
@@ -67,7 +18,12 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
     [SerializeField] private CraftingItemDatabase itemDatabase;
     [SerializeField] private CraftingItem thumbnailPrefab;
     [SerializeField] private CraftingItemWindow windowPrefab;
-    [Space]
+    [SerializeField] private GameObject gameOverSequence; //TODO: move this somewhere proper
+    [Header("Crafting VFX/animations")]
+    [SerializeField] private PlayableDirector duringCraftFX;
+    [SerializeField] private bool inspectItemOnFirstCraft = true;
+    [SerializeField] private float onSpawnInspectTime = 0.1f;
+    [SerializeField] private float onSpawnMoveToEndPosTime = 1f;
     [SerializeField] private float multiItemSpawnDelay = 0.1f;
     [Header("Crafting zones")]
     [SerializeField] private CrafterBoard crafterBoard;
@@ -92,43 +48,20 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
     private LayerMask itemLayerMask;
     private const float MaxRaycastDist = 20f;
     private readonly Vector3 RaycastStartUpOffset = Vector3.up * 10f;
-
-    //Dictionary of {ITEM : CONTACTS} where ITEM is the item which initially reported the contact.
-    //Contains duplicates so all contacts can be found using any contacting item's key, e.g.
-    //{WATER : [WATER, GROUND, BEACH]}
-    //{GROUND : [WATER, GROUND, BEACH]}
-    //{BEACH : [WATER, GROUND, BEACH]}
-    private Dictionary<CraftingItem, ItemContactsGroup> itemContactsDict = new Dictionary<CraftingItem, ItemContactsGroup>();
     
-    //HashSet containing only each unique contact group
-    private HashSet<ItemContactsGroup> itemContactGroups = new HashSet<ItemContactsGroup>();
-
     private bool canCraft;
 
+    public CraftingEventTracker CraftedTracker { get; } = new CraftingEventTracker();
+    private ItemContactsTracker itemContactsTracker = new ItemContactsTracker();
     private Coroutine spawnHelperItemCoroutine;
-
-    private void OnEnable()
-    {
-        
-    }
 
     private void Start()
     {
-        if(Cursor.InstExists())
-        {
-            Cursor.Inst.AddCursorEventListener(this);
-        }
-
         itemLayerMask = LayerMask.GetMask("Item");
     }
 
     private void OnDisable()
     {
-        if(Cursor.InstExists())
-        {
-            Cursor.Inst.RemoveCursorEventListener(this);
-        }
-
         if(crafterBoard)
         {
             foreach (var placementPoint in crafterBoard.PlacementPoints)
@@ -143,10 +76,10 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
     {
         if (debugDisplay)
         {
-            debugDisplay.SetCraftingDebugInfo(itemContactGroups);
+            debugDisplay.SetCraftingDebugInfo(itemContactsTracker.ContactGroups);
         }
 
-        UpdateTrimmedItemGroups();
+        itemContactsTracker.LateUpdate();
 
         if(CheckForPossibleCrafts())
         {
@@ -157,6 +90,17 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         }
         else //no crafts possible - start spawning helper items
         {
+            //TODO: prototype! ugh
+            if (!gameOverSequence)
+            {
+                gameOverSequence = FindFirstObjectByType<ItemShowcaseSequence>().transform.root.gameObject;
+            }
+
+            if(gameOverSequence)
+            {
+                gameOverSequence.SetActive(true);
+            }
+
             if (spawnHelperItemCoroutine == null)
             {
                 spawnHelperItemCoroutine = StartCoroutine(SpawnHelperItem());
@@ -178,118 +122,24 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         TryCraft(placedItems);
     }
 
-    private void UpdateTrimmedItemGroups()
-    {
-        itemContactGroups.Clear();
-        foreach(var keyItem in itemContactsDict.Keys)
-        {
-            var group = new HashSet<CraftingItem>() { keyItem };
-            ExpandItemGroup(group, itemContactsDict[keyItem].Items);
-            itemContactGroups.Add(new ItemContactsGroup(group));
-        }
-    
-        void ExpandItemGroup(HashSet<CraftingItem> existingGroup, HashSet<CraftingItem> newGroup)
-        {
-            if(newGroup != existingGroup)
-            {
-                var newItems = new HashSet<CraftingItem>(newGroup);
-                newItems.ExceptWith(existingGroup);
-                existingGroup.UnionWith(newGroup);
-                foreach (var item in newItems)
-                {
-                    if(itemContactsDict.TryGetValue(item, out var newItemContacts))
-                    {
-                        ExpandItemGroup(existingGroup, newItemContacts.Items);
-                    }
-                }
-            }
-        }
-    }
-
     public void AddItemContact(CraftingItem item, CraftingItem contactingItem)
     {
-        if(!item || !contactingItem)
-        {
-            return;
-        }
-
-        if(itemContactsDict.TryGetValue(item, out var touchingItems))
-        {
-            if(!touchingItems.Contains(contactingItem))
-            {
-                touchingItems.Add(contactingItem);
-            }
-        }
-        else
-        {
-            itemContactsDict.Add(item, new ItemContactsGroup(new HashSet<CraftingItem> { item, contactingItem })); //item is always touching itself
-        }
-
-        //UpdateTrimmedItemGroups();
+        itemContactsTracker.AddItemContact(item, contactingItem);
     }
 
     public void RemoveItemContact(CraftingItem item, CraftingItem contactingItem)
     {
-        if(!item || !contactingItem)
-        {
-            return;
-        }
-
-        //remove other item from this item's contacts
-        if(itemContactsDict.TryGetValue(item, out var touchingThisItem) && touchingThisItem.Contains(contactingItem))
-        {
-            touchingThisItem.Remove(contactingItem);
-         
-            if(touchingThisItem.Count < 2) //delete if <2 since we always add the item itself to the touching items (TODO: this is jank)
-            {
-                itemContactsDict.Remove(item);
-            }
-        }
-
-        //remove this item from other item's contacts
-        if(itemContactsDict.TryGetValue(contactingItem, out var touchingOtherItem) && touchingOtherItem.Contains(item))
-        {
-            touchingOtherItem.Remove(contactingItem);
-
-            if (touchingOtherItem.Count < 2) 
-            {
-                itemContactsDict.Remove(contactingItem);
-            }
-        }
-
-        //UpdateTrimmedItemGroups();
+        itemContactsTracker.RemoveItemContact(item, contactingItem);
     }
 
     public void RemoveAllItemContactsForItem(CraftingItem item)
     {
-        if(!item)
-        {
-            return;
-        }
-
-        if(itemContactsDict.TryGetValue(item, out var itemContacts))
-        {
-            itemContactsDict.Remove(item);
-            foreach(var contactingItem in itemContacts.Items)
-            {
-                if(itemContactsDict.TryGetValue(contactingItem, out var otherItemContacts))
-                {
-                    otherItemContacts.Remove(item);
-                }
-            }
-        }
-
-        //UpdateTrimmedItemGroups();
+        itemContactsTracker.RemoveAllItemContactsForItem(item);
     }
 
     private int TryCraft(ICollection<CraftingItem> ingredients)
     {
         var numResults = GetCraftResultsAllItems(ingredients, craftResults, craftResultStates);
-
-        if(numResults == 0)
-        {
-            return numResults;
-        }
 
         //TODO: allocation
         var anySuccessfulCraft = false;
@@ -392,14 +242,6 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         {
             for (int i = unusedIngredients.Count - 1; i >= 0; i--)
             {
-                //TODO: probably ingredients which are flagged as not to be used in crafts shouldn't even make it to this stage; refactor?
-                /*
-                if (!unusedIngredients[i].CanCraft) 
-                {
-                    continue;
-                }
-                */
-                
                 if (unusedIngredients[i].Data == prereqData || unusedIngredients[i].Data.Aliases.Contains(prereqData))
                 {
                     numMatching++;
@@ -420,7 +262,6 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
             yield break;
         }
 
-        //turn ingredient physics/collision/input off
         foreach (var ingredient in ingredients)
         {
             ingredient.SetState(CraftingItem.State.Animatable);
@@ -473,6 +314,13 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         }
         while (t < 1f);
 
+        if(duringCraftFX)
+        {
+            duringCraftFX.gameObject.transform.position = fusionPos;
+            duringCraftFX.gameObject.SetActive(true);
+            yield return new WaitForSeconds(2f);
+        }
+
         //Spawn new items - angle stuff is jank lmao
         var newItemStartAngle = Random.Range(0f, 360f);
         var newItemOffset = new Vector3(0f, 0.5f, 0.5f); //forward and up
@@ -499,12 +347,13 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
             //Instantiate new item
             var result = successfulCrafts[i];
             var posOffset = Vector3.right * 1.25f;
-            yield return SpawnItemAnimated(result, fusionPos, spawnOrigin + (posOffset * spawnCount), multiItemSpawnDelay);
-            //SpawnItemToGrid(result, fusionPos, Quaternion.identity, multiItemSpawnDelay);
+
+            //yield return SpawnItemAnimated(result, fusionPos, spawnOrigin + (posOffset * spawnCount));
+            yield return SpawnItemToGrid(result, fusionPos, Quaternion.identity);
             spawnCount++;
 
             //TODO: "new WaitForSeconds" allocates - make a helper class to get WaitForSecondses without allocation
-            //yield return new WaitForSeconds(multiItemSpawnDelay); 
+            yield return new WaitForSeconds(multiItemSpawnDelay); 
 
             //Instantiate any extra products
             if (result.ExtraProducts.Count > 0)
@@ -512,82 +361,65 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
                 foreach (var extraProduct in result.ExtraProducts)
                 {
                     //spawn item
-                    yield return SpawnItemAnimated(extraProduct, fusionPos, spawnOrigin + (posOffset * spawnCount), multiItemSpawnDelay);
-                    //SpawnItemToGrid(extraProduct, fusionPos, Quaternion.identity, multiItemSpawnDelay);
+                    //yield return SpawnItemAnimated(extraProduct, fusionPos, spawnOrigin + (posOffset * spawnCount));
+                    yield return SpawnItemToGrid(extraProduct, fusionPos, Quaternion.identity);
                     spawnCount++;
                     Debug.Log($"Spawned extra product {extraProduct.ItemName} from craft result {result.ItemName}!");
-                    //yield return new WaitForSeconds(multiItemSpawnDelay);
-                }
-            }
-        }
-    }
-
-    private void TryCraftAllItemContacts()
-    {
-        if(!canCraft)
-        {
-            return;
-        }
-
-        var anySuccessfulCraft = false;
-        foreach (var contactGroup in itemContactGroups)
-        {
-            if(contactGroup.Count < 2)
-            {
-                continue;
-            }
-
-            var numResults = TryCraft(contactGroup.Items);
-            for(int i = 0; i < numResults; i++)
-            {
-                if (craftResultStates[i] == CraftingResultState.SuccessfulCraft)
-                {
-                    anySuccessfulCraft = true;
-                    break;
+                    yield return new WaitForSeconds(multiItemSpawnDelay);
                 }
             }
         }
 
-        if(anySuccessfulCraft)
+        if(duringCraftFX)
         {
-            canCraft = false;
+            duringCraftFX.gameObject.SetActive(false);
         }
-    }
-
-    private IEnumerator SpawnItemAnimated(CraftingItemData itemData, Vector3 startPos_WS, Vector3 endPos_WS, float time)
-    {
-        yield return SpawnItemAnimated(itemData, startPos_WS, endPos_WS, Quaternion.identity, Quaternion.identity, time);
     }
 
     private IEnumerator SpawnItemAnimated(
         CraftingItemData itemData,
         Vector3 startPos_WS, 
-        Vector3 endPos_WS, 
-        Quaternion startRotation_WS, 
-        Quaternion endRotation_WS, 
-        float time)
+        Vector3 endPos_WS,
+        bool wasCrafted = true)
     {
-        var item = SpawnItem(itemData, startPos_WS, startRotation_WS);
-        yield return item.AnimateToRoutine(endPos_WS, endRotation_WS, time);
+        var wasCraftedPreviously = CraftedTracker.WasItemCraftedPreviously(itemData);
+        var item = SpawnItem(itemData, startPos_WS, Quaternion.identity, wasCrafted);
+        item.SetState(CraftingItem.State.Animatable);
+
+        if (wasCrafted && inspectItemOnFirstCraft && !wasCraftedPreviously)
+        {
+            var cam = Cursor.Inst.Cam;
+            yield return item.AnimateToRoutine(cam.transform.position + (cam.transform.forward * 2f), Quaternion.identity, onSpawnMoveToEndPosTime, false);
+            item.SetOnInspectVFX(true);
+            yield return new WaitForSeconds(onSpawnInspectTime);
+            item.SetOnInspectVFX(false);
+        }
+
+        yield return item.AnimateToRoutine(endPos_WS, Quaternion.identity, onSpawnMoveToEndPosTime, false);
+        item.SetState(CraftingItem.State.Active);
     }
 
-    private void SpawnItemToGrid(CraftingItemData itemData, Vector3 startPos_WS, Quaternion startRotation_WS, float time)
+    private IEnumerator SpawnItemToGrid(CraftingItemData itemData, Vector3 startPos_WS, Quaternion startRotation_WS, bool wasCrafted = true)
     {
-        var item = SpawnItem(itemData, startPos_WS, startRotation_WS);
-        if(crafterBoard)
+        var wasCraftedPreviously = CraftedTracker.WasItemCraftedPreviously(itemData);
+        var item = SpawnItem(itemData, startPos_WS, startRotation_WS, wasCrafted);
+        item.SetState(CraftingItem.State.Animatable);
+        if (wasCrafted && inspectItemOnFirstCraft && !wasCraftedPreviously)
+        {
+            var cam = Cursor.Inst.Cam;
+            yield return item.AnimateToRoutine(cam.transform.position + (cam.transform.forward * 2f), Quaternion.identity, onSpawnMoveToEndPosTime, false);
+            item.SetOnInspectVFX(true);
+            yield return new WaitForSeconds(onSpawnInspectTime);
+            item.SetOnInspectVFX(false);
+        }
+
+        if (crafterBoard)
         {
             crafterBoard.MoveItemToGrid(item);
         }
     }
 
-    /// <summary>Instantiate a crafting item directly</summary>
-    /// <param name="wasCrafted">if true, call the item's on-crafted callback</param>
-    public CraftingItem SpawnItem(CraftingItemData itemData, Vector3 position, bool wasCrafted = true)
-    {
-        return SpawnItem(itemData, position, Quaternion.identity);
-    }
-
-    /// <summary>Instantiate a crafting item directly</summary>
+    /// <summary>Instantiate a crafting item directly.</summary>
     /// <param name="wasCrafted">if true, call the item's on-crafted callback</param>
     public CraftingItem SpawnItem(CraftingItemData itemData, Vector3 position, Quaternion rotation, bool wasCrafted = true)
     {
@@ -596,6 +428,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 
         if(wasCrafted)
         {
+            CraftedTracker.OnItemCrafted(itemData);
             item.OnCrafted();
         }
 
@@ -604,19 +437,7 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
 
     public void OnItemDisabledOrDestroyed(CraftingItem item)
     {
-        foreach(var contacts in itemContactsDict.Values)
-        {
-            if (contacts.Contains(item))
-            {
-                contacts.Remove(item);
-            }
-        }
-
-        if(itemContactsDict.ContainsKey(item))
-        {
-            itemContactsDict.Remove(item);
-        }
-
+        itemContactsTracker.OnItemDisabledOrDestroyed(item);
         DeregisterCraftingItem(item);
     }
 
@@ -647,7 +468,8 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
             yield return new WaitForSeconds(Random.Range(helperSpawnMinTime, helperSpawnMaxTime));
 
             SpawnItem(randomProducts[Random.Range(0, randomProducts.Count)],
-                crafterBoard.GetRandomPointOnBoard(padding: 1f) + Vector3.up * 10f);
+                crafterBoard.GetRandomPointOnBoard(padding: 1f) + Vector3.up * 10f,
+                Quaternion.identity);
         }
     }
 
@@ -683,46 +505,8 @@ public class CraftingManager : SingletonMonoBehaviour<CraftingManager>, ICursorE
         activeItems.Remove(item);
     }
 
-    public void OnCursorEvent(Cursor.EventID e)
-    {
-        //TODO: prototype hack
-        if(e == Cursor.EventID.LeftClickUp)
-        {
-            canCraft = true;
-        }
-    }
-
     private void OnDrawGizmos()
     {
-        var contactPositions = new List<Vector3>();
-        if(itemContactsDict.Count > 0)
-        {
-            Gizmos.matrix = Matrix4x4.identity;
-            var hue = 0f;
-            var inc = 1f / itemContactsDict.Count;
-            foreach (var contactGroup in itemContactGroups)
-            {
-                contactPositions.Clear();
-                Gizmos.color = Color.HSVToRGB(hue, 1f, 1f);
-                foreach (var contact in contactGroup.Items)
-                {
-                    Gizmos.DrawSphere(contact.transform.position, 0.1f);
-                    contactPositions.Add(contact.transform.position);
-                }
-
-                for(int i = 0; i < contactPositions.Count; i++)
-                {
-                    for(int j = 0; j < contactPositions.Count; j++)
-                    {
-                        if(i != j)
-                        {
-                            Gizmos.DrawLine(contactPositions[i], contactPositions[j]);
-                        }
-                    }
-                }
-
-                hue += inc;
-            }
-        }
+        itemContactsTracker.OnDrawGizmos();
     }
 }

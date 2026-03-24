@@ -1,5 +1,3 @@
-using Mono.Cecil.Cil;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -48,13 +46,19 @@ public class CraftingItemDeck : MonoBehaviour, ICursorEventListener
     {
         //if player has started dragging the top item, remove it from the deck
         //TODO: this is jank
-        CheckForTopItemGrabbed();
+        CheckForTopItemRemoved();
     }
 
-    private void CheckForTopItemGrabbed()
+    private void CheckForTopItemRemoved()
     {
         if(deck.Count == 0)
         {
+            return;
+        }
+
+        if(!deck.Last.Value)
+        {
+            RemoveTopItem();
             return;
         }
 
@@ -106,14 +110,20 @@ public class CraftingItemDeck : MonoBehaviour, ICursorEventListener
 
     private void OnItemAdded(CraftingItem item)
     {
-        item.transform.parent = transform;
-        item.SetState(CraftingItem.State.Animatable);
+        if(item)
+        {
+            item.transform.parent = transform;
+            item.SetState(CraftingItem.State.Animatable);
+        }
     }
 
     private void OnItemRemoved(CraftingItem item)
     {
-        item.transform.parent = null;
-        item.SetState(CraftingItem.State.Active);
+        if(item)
+        {
+            item.transform.parent = null;
+            item.SetState(CraftingItem.State.Active);
+        }
     }
 
     private void MoveItemToDeck(CraftingItem item, Vector3 targetPos)
@@ -133,7 +143,7 @@ public class CraftingItemDeck : MonoBehaviour, ICursorEventListener
         for(int i = 0; i < deckItems.ItemList.Count; i++)
         {
             var itemData = deckItems.ItemList[i];
-            var item = CraftingManager.Inst.SpawnItem(itemData, transform.position);
+            var item = CraftingManager.Inst.SpawnItem(itemData, transform.position, Quaternion.identity);
             item.transform.parent = transform;
             AddItemToTopDeck(item);
         }
@@ -151,6 +161,11 @@ public class CraftingItemDeck : MonoBehaviour, ICursorEventListener
 
     private void GrabTopDeckItem()
     {
+        if(IsEmpty())
+        {
+            return;
+        }
+
         var item = deck.Last.Value;
         if(item)
         {
@@ -199,7 +214,9 @@ public class CraftingItemDeck : MonoBehaviour, ICursorEventListener
         {
             //drop hovered item onto deck
             var cursor = Cursor.Inst;
-            if(cursor.IsHovered(this) && cursor.CurrentDragTarget.TryGetComponent<CraftingItem>(out var item))
+            if(cursor.IsHovered(this) 
+                && cursor.CurrentDragTarget
+                && cursor.CurrentDragTarget.TryGetComponent<CraftingItem>(out var item))
             {
                 cursor.CurrentDragTarget.CancelDrag();
                 AddItemToTopDeck(item);
@@ -210,8 +227,15 @@ public class CraftingItemDeck : MonoBehaviour, ICursorEventListener
     private void OnDrawGizmos()
     {
         Gizmos.matrix = Matrix4x4.identity;
-        Gizmos.color = Color.white;
+        if(Cursor.InstExists() && Cursor.Inst.IsHovered(this))
+        {
+            Gizmos.color = Color.green;
+        }
+        else
+        {
+            Gizmos.color = Color.white;
+        }
         Gizmos.DrawSphere(transform.position, 0.1f);
-        Gizmos.DrawWireCube(transform.position, new Vector3(1f, 0.1f, 1f));
+        Gizmos.DrawWireCube(transform.position, new Vector3(1f, 0f, 1f));
     }
 }

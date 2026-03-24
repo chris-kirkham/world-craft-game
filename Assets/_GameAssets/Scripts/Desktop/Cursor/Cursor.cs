@@ -142,7 +142,11 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
 
         //physics raycast
         var raycastHitCount = Physics.RaycastNonAlloc(
-            cam.ScreenPointToRay(clampedRawMousePos), raycastHits, MaxRaycastDist, cursorRaycastLayerMask);
+            cam.ScreenPointToRay(clampedRawMousePos),
+            raycastHits,
+            MaxRaycastDist, 
+            cursorRaycastLayerMask, 
+            queryTriggerInteraction: QueryTriggerInteraction.Collide);
         for(int i = 0; i < raycastHitCount; i++)
         {
             UpdateHitListeners(raycastHits[i].collider.gameObject);

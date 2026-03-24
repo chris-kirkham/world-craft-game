@@ -10,6 +10,4 @@ public class CraftingItemDatabase : ScriptableObject
     [SerializeField] private List<CraftingItemData> itemList;
 
     public List<CraftingItemData> ItemList => itemList;
-
-
 }

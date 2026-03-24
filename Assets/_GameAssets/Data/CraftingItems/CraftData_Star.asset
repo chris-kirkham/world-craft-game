@@ -19,4 +19,5 @@ MonoBehaviour:
   prerequisites:
   - {fileID: 11400000, guid: 447e815deba235b44b2604f425d83cd7, type: 2}
   - {fileID: 11400000, guid: c03eaadaeb521804ba15be4202e99e2a, type: 2}
-  products: []
+  products:
+  - {fileID: 11400000, guid: c6ddf3c03eeddc8448ae41fef5ff0bf0, type: 2}

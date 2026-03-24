@@ -36,6 +36,11 @@ public class CraftingDevWindow : EditorWindow
     {
         searchResultsRoot.Clear();
 
+        if(string.IsNullOrEmpty(searchString))
+        {
+            return;
+        }
+
         foreach(var database in itemDatabases)
         {
             var databaseNameLabel = new Label(database.name + ":");
@@ -45,35 +50,25 @@ public class CraftingDevWindow : EditorWindow
             {
                 var additionalInfoText = "";
 
-                var isMatch = IsEqualToSearchString(item.ItemName); 
+                var isMatch = ContainsSearchString(item.ItemName); 
                 foreach (var prereq in item.Prerequisites)
                 {
-                    if(isMatch)
+                    var prereqMatch = ContainsSearchString(prereq.ItemName);
+                    if (prereqMatch)
                     {
-                        break;
-                    }
-
-                    isMatch |= IsEqualToSearchString(prereq.ItemName);
-
-                    if(isMatch)
-                    {
-                        additionalInfoText += "(prerequisite";
+                        additionalInfoText += $"({prereq.ItemName} is prerequisite";
+                        isMatch |= prereqMatch;
                     }
                 }   
 
                 foreach(var product in item.ExtraProducts)
                 {
-                    if(isMatch)
-                    {
-                        break;
-                    }
-
-                    isMatch |= IsEqualToSearchString(product.ItemName);
-
-                    if (isMatch)
+                    var additionalProductMatch = ContainsSearchString(product.ItemName);
+                    if (additionalProductMatch)
                     {
                         additionalInfoText += additionalInfoText.Length > 0 ? ", " : "(";
-                        additionalInfoText += "extra product";
+                        additionalInfoText += $"{product.ItemName} is extra product";
+                        isMatch |= additionalProductMatch;
                     }
                 }
 
@@ -99,9 +94,9 @@ public class CraftingDevWindow : EditorWindow
             }
         }
 
-        bool IsEqualToSearchString(string str)
+        bool ContainsSearchString(string str)
         {
-            return str.Equals(searchString, System.StringComparison.OrdinalIgnoreCase);
+            return !string.IsNullOrEmpty(searchString) && str.Contains(searchString, System.StringComparison.OrdinalIgnoreCase);
         }
     }
 

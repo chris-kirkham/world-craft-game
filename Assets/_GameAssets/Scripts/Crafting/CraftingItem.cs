@@ -64,7 +64,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
     }
 
     //IStackable
-    public bool CanStack => true;
+    public bool CanStack => false;
     public Vector3 StackingOffset => stackingOffset;
     public Stacker CurrentStacker { get; set; }
     
@@ -406,11 +406,12 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
         }
         else
         {
-            if (tweenSequence == null || !tweenSequence.active)
+            if (tweenSequence != null && tweenSequence.active)
             {
-                tweenSequence = DOTween.Sequence(transform);
+                yield return tweenSequence.WaitForCompletion();
             }
 
+            tweenSequence = DOTween.Sequence(transform);
             tweenSequence.Append(transform.DOMove(position_WS, time));
             tweenSequence.Join(transform.DORotate(rotation_WS.eulerAngles, time));
 
@@ -427,17 +428,26 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
         }
     }
 
-    private void SetInspecting(bool inspecting)
+    public void SetOnInspectVFX(bool inspecting)
     {
-        var wasInspecting = isInspecting;
         isInspecting = inspecting;
-        if (inspecting && !wasInspecting)
+        if (inspecting)
         {
-            StartCoroutine(DoInspectRoutine());
+            if (nameTextFade)
+            {
+                nameTextFade.EnableAndPlayInClip();
+            }
+        }
+        else
+        {
+            if (nameTextFade)
+            {
+                nameTextFade.PlayClipThenDisable();
+            }
         }
     }
 
-    private IEnumerator DoInspectRoutine()
+    private IEnumerator DoInspectRoutine(Vector3 endPos, Quaternion endRotation)
     {
         //TODO: placeholder position and rotation!
         var cam = cursor.Cam;
@@ -449,23 +459,10 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
         var prevState = state;
 
         yield return AnimateToRoutine(targetPos, targetRotation, 0.5f, returnToPrevStateOnEndAnim: false);
-        
-        if(nameTextFade)
-        {
-            nameTextFade.EnableAndPlayInClip();
-        }
 
         while(isInspecting)
         {
-            
-            transform.position = targetPos;
-            transform.rotation = targetRotation;
             yield return null;
-        }
-        
-        if(nameTextFade)
-        {
-            nameTextFade.PlayClipThenDisable();
         }
 
         //TODO: fix grab ending on this (due to going into animation state) and/or think about desired behaviour
@@ -480,12 +477,12 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
             //inspect item while holding right-click
             if (cursor.CurrentDragTarget == dragHandler)
             {
-                SetInspecting(true);
+                SetOnInspectVFX(true);
             }
         }
         else if(e == Cursor.EventID.RightClickUp)
         {
-            SetInspecting(false);
+            SetOnInspectVFX(false);
         }
     }
 

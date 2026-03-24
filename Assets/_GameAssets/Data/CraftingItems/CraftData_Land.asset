@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64da08f90a4e74a41ae61ff1dccf769c, type: 3}
-  m_Name: CraftData_Growth
+  m_Name: CraftData_Land
   m_EditorClassIdentifier: 
-  itemName: Growth
+  itemName: Land
   craftingAliases: []
-  thumbnailTex: {fileID: 2800000, guid: 9bd3b1b6cca48b94ca30a781a17f5ec9, type: 3}
+  thumbnailTex: {fileID: 0}
   contentPrefab: {fileID: 0}
   prerequisites:
   - {fileID: 11400000, guid: 33fbd6f9fc3345f4c842fd6e648b25e7, type: 2}
-  - {fileID: 11400000, guid: 299c2723918579e43af015a05132e2e1, type: 2}
+  - {fileID: 11400000, guid: b97b65d9ec7389448871363ce88509ff, type: 2}
+  - {fileID: 11400000, guid: f6f13c1db963d044ba70bcfe5b050587, type: 2}
   products:
-  - {fileID: 11400000, guid: 8bb4af9fcae65764a83a4be15df56d17, type: 2}
-  - {fileID: 11400000, guid: a5ecc6b4dca2d814fb3b56f35b0be370, type: 2}
+  - {fileID: 11400000, guid: edc0566db5321cf4c99fb8a5cd75db6d, type: 2}

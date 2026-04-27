@@ -40,7 +40,7 @@ public class IntroSeqCraftingItem : MonoBehaviour, ICursorEventListener
 
         if(onHoverText.gameObject.activeSelf)
         {
-            onHoverText.PlayClipThenDisable();
+            onHoverText.FadeOut();
         }
     }
 
@@ -59,13 +59,13 @@ public class IntroSeqCraftingItem : MonoBehaviour, ICursorEventListener
         if(e == Cursor.EventID.EnterElement)
         {
             isHovered = true;
-            onHoverText.EnableAndPlayInClip();
+            onHoverText.FadeIn();
         }
 
         if (e == Cursor.EventID.ExitElement)
         {
             isHovered = false;
-            onHoverText.PlayClipThenDisable();
+            onHoverText.FadeOut();
         }
 
         if(e == Cursor.EventID.LeftClickDown && isHovered)

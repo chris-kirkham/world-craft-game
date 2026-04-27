@@ -1,14 +1,15 @@
 using DG.Tweening;
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Playables;
-using static UnityEditor.Progress;
+using Crafting;
 
 public class IntroSequence : MonoBehaviour
 {
     [SerializeField] private PlayableDirector playableDirector;
+    [SerializeField] private float preChooseItemPauseTime;
     [SerializeField] private CameraMovement playerCam;
     [SerializeField] private FadeInOutText topText;
     [SerializeField] private List<IntroSeqCraftingItem> startingItemChoices;
@@ -20,26 +21,25 @@ public class IntroSequence : MonoBehaviour
     private const float spawnAnimWaitTime = 0.25f;
     private const float moveToBoardAnimWaitTime = 0.2f;
 
+    private Cursor cursor;
+
     private void OnEnable()
     {
+        if(!playerCam)
+        {
+            playerCam = FindFirstObjectByType<CameraMovement>();
+        }
+
         if(playerCam)
         {
-            //playerCam.SetMovementEnabled(false, false);
+            playerCam.SetMovementEnabled(false, false);
         }
         else
         {
-            playerCam = FindFirstObjectByType<CameraMovement>();
-            if(playerCam)
-            {
-                //playerCam.SetMovementEnabled(false, false);
-            }
-            else
-            {
-                Debug.LogError($"No {nameof(CameraMovement)} set and none found in scene!");
-            }
+            Debug.LogError($"No {nameof(CameraMovement)} set and none found in scene!");
         }
 
-        if(!crafterBoard)
+        if (!crafterBoard)
         {
             crafterBoard = FindFirstObjectByType<CrafterBoard>();
         }
@@ -48,6 +48,34 @@ public class IntroSequence : MonoBehaviour
         {
             postIntroLighting.SetActive(false);
         }
+        
+        StartCoroutine(PreChooseItemPauseRoutine());
+    }
+
+    private void Start()
+    {
+        cursor = Cursor.Inst;
+        if(cursor)
+        {
+            cursor.SetAllowInput(false);
+        }
+    }
+
+    private void OnDisable()
+    {
+        if(cursor)
+        {
+            cursor.SetAllowInput(true);
+        }
+    }
+
+    //TODO: kind of jank - split pre- and post- item selection sequences into two timelines (annoying to do)?
+    //Or use signal emitters (seems overkill for this case)
+    private IEnumerator PreChooseItemPauseRoutine()
+    {
+        yield return new WaitForSeconds(preChooseItemPauseTime);
+        playableDirector.Pause();
+        cursor.SetAllowInput(true);
     }
 
     public void OnChooseItem(CraftingItem item)
@@ -57,9 +85,11 @@ public class IntroSequence : MonoBehaviour
 
     private IEnumerator SpawnChosenItemsRoutine(CraftingItemData chosenItemData)
     {
-        playableDirector.Stop();
-        topText.PlayClipThenDisable();
+        cursor.SetAllowInput(false);
+
+        topText.FadeOut();
         yield return new WaitForSeconds(spawnAnimWaitTime);
+        Destroy(topText.gameObject);
 
         //spawn copies of chosen item at spawn positions
         var spawnedItems = new List<CraftingItem>(startingItemChoices.Count);
@@ -110,8 +140,21 @@ public class IntroSequence : MonoBehaviour
             }
         }
 
-        postIntroLighting.SetActive(true);
-        //playerCam.SetMovementEnabled(true, true);
+        if(postIntroLighting)
+        {
+            postIntroLighting.SetActive(true);
+        }
+
+        if(playerCam)
+        {
+            playerCam.SetMovementEnabled(true, true);
+        }
+
+        playableDirector.Resume();
+
+        yield return new WaitForSeconds(spawnAnimWaitTime);
+
+        cursor.SetAllowInput(true);
         enabled = false;
     }
 

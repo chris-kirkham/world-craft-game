@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using static ItemContactsTracker;
+using Crafting;
 
 public class ItemContactsTracker
 {

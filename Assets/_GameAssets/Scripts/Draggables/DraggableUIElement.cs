@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Serialization;
 
-public class DraggableUIElement : DraggableElement
+public class DraggableUIElement : DraggableObject
 {
     [SerializeField] protected Canvas canvas;
     [SerializeField] protected RectTransform handleRect;
@@ -23,7 +23,7 @@ public class DraggableUIElement : DraggableElement
                 if (cam)
                 {
                     canvas.worldCamera = cam;
-                    Debug.Log($"Using {cam.name} as event camera for {nameof(DraggableElement)} {name}'s Canvas.");
+                    Debug.Log($"Using {cam.name} as event camera for {nameof(DraggableObject)} {name}'s Canvas.");
                 }
 
                 //this warning is for me because it took me too long to figure this out
@@ -34,7 +34,7 @@ public class DraggableUIElement : DraggableElement
         }
         else
         {
-            Debug.LogError($"No Canvas set for {nameof(DraggableElement)} {name}! Dragging will not work properly.");
+            Debug.LogError($"No Canvas set for {nameof(DraggableObject)} {name}! Dragging will not work properly.");
         }
     }
 

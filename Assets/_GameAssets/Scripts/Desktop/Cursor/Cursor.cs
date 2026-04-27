@@ -55,13 +55,11 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
     }
 
     [SerializeField] private LayerMask cursorRaycastLayerMask;
-    [SerializeField] private PixelPerfectCamera pixelPerfectCamera;
+    [SerializeField] private Camera cam;
     [SerializeField] private Image cursorImage;
     [SerializeField, FormerlySerializedAs("defaultCursorSprite")] private Sprite defaultSprite;
     [Space]
     [SerializeField] private DebugDisplay debugDisplay;
-
-    private Camera cam;
 
     //mouse raycasting
     private EventSystem eventSystem;
@@ -78,6 +76,7 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
     private Vector2 prevRawMousePosition;
     private Vector2 clampedRawMousePos;
     private Vector3 prevClampedMousePos_WS;
+    private bool inputEnabled = true;
     private bool isPositionFrozen;
     private bool[] mouseButtonsPressed = new bool[3]; //0 = left, 1 = right, 2 = middle
     //private bool[] mouseButtonsPressedLastTick = new bool[3]; //0 = left, 1 = right, 2 = middle
@@ -89,6 +88,8 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
     private HashSet<ICursorEventListener> listenersToRemove = new HashSet<ICursorEventListener>(); 
     private List<ICursorEventListener> hoveredListeners = new List<ICursorEventListener>(); //event listeners the cursor is currently on top of
     private List<SpriteOverride> spriteOverrides = new List<SpriteOverride>();
+    private HashSet<DraggableObject> dragRequests = new HashSet<DraggableObject>();
+
 
     public Vector2 RawPosition => rawMousePosition;
     public Vector2 RawPositionDelta => rawMousePosition - prevRawMousePosition;
@@ -103,15 +104,12 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
 
     public Camera Cam => cam;
 
-    private HashSet<DraggableElement> dragRequests = new HashSet<DraggableElement>();
-    public DraggableElement CurrentDragTarget { get; set; } 
+    public DraggableObject CurrentDragTarget { get; set; }
 
     private void OnEnable()
     {
-        cam = pixelPerfectCamera.GetComponent<Camera>();
         eventSystem = FindFirstObjectByType<EventSystem>();
-
-        //UnityEngine.Cursor.visible = false; //hide default cursor (TODO: look at using Cursor.SetCursor instead?)
+        UnityEngine.Cursor.visible = false; //hide default cursor (TODO: look at using Cursor.SetCursor instead?)
     }
 
     private void Update()
@@ -319,6 +317,23 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
         listenersToRemove.Clear();
     }
 
+    public void SetAllowInput(bool allowInput, bool alsoShowHideCursor = true)
+    {
+        inputEnabled = allowInput;
+        if(alsoShowHideCursor)
+        {
+            SetCursorVisible(inputEnabled);
+        }
+    }
+
+    public void SetCursorVisible(bool visible)
+    {
+        if(cursorImage)
+        {
+            cursorImage.enabled = visible;
+        }
+    }
+
     public void FreezeCursorPos(bool frozen)
     {
         isPositionFrozen = frozen;
@@ -330,11 +345,14 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
         return hoveredListeners.Contains(listener);
     }
     
-    public void AddEvent(EventID e, ICursorEventListener listener = null)
+    private void AddEvent(EventID e, ICursorEventListener listener = null)
     {
+        if(!inputEnabled)
+        {
+            return;
+        }
+
         eventStack.Push(new CursorEvent(e, listener));
-        //TODO: trigger events on LateUpdate so they're not being spread throughout the frame?
-        
     }
 
     private void SendEvents()
@@ -356,12 +374,12 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
         }
     }
 
-    public void AddToDragList(DraggableElement draggable)
+    public void AddToDragRequests(DraggableObject draggable)
     {
         dragRequests.Add(draggable);
     }
 
-    public void RemoveFromDragList(DraggableElement draggable)
+    public void RemoveFromDragRequests(DraggableObject draggable)
     {
         dragRequests.Remove(draggable);
     }
@@ -387,7 +405,7 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
         }
 
         //find best drag option by y distance to camera - TODO: think of a smarter way to do this
-        DraggableElement closestDraggable = null;
+        DraggableObject closestDraggable = null;
         var minDist = Mathf.Infinity;
         foreach(var draggable in dragRequests)
         {

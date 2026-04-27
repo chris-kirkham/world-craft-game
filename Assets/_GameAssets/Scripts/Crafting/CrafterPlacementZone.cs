@@ -16,7 +16,10 @@ public class CrafterPlacementZone : MonoBehaviour, ICursorEventListener
     [SerializeField] private Transform zonePivot;
     [SerializeField] private Vector2 zoneSize;
     [SerializeField] private float animateItemToPlacementPointTime = 0.5f;
+    [Header("VFX")]
+    [SerializeField] private GameObject placementPreviewVFX;
 
+    private Cursor cursor;
     private CraftingItem currentItem;
     private State state;
 
@@ -34,6 +37,7 @@ public class CrafterPlacementZone : MonoBehaviour, ICursorEventListener
      
         if(Cursor.InstExists())
         {
+            cursor = Cursor.Inst;
             Cursor.Inst.AddCursorEventListener(this);
         }
     }
@@ -51,6 +55,11 @@ public class CrafterPlacementZone : MonoBehaviour, ICursorEventListener
         if(!currentItem)
         {
             SetState(State.Empty);
+        }
+
+        if(cursor && placementPreviewVFX)
+        {
+            placementPreviewVFX.SetActive(cursor.IsHovered(this) && cursor.CurrentDragTarget);
         }
     }
 
@@ -93,9 +102,10 @@ public class CrafterPlacementZone : MonoBehaviour, ICursorEventListener
             Debug.Assert(currentItem);
             yield break;
         }
-     
-        yield return currentItem.AnimateToRoutine(zonePivot.position, zonePivot.rotation, animateItemToPlacementPointTime);
-        Debug.Log("Item animated!");
+
+        yield return Tweening.DoTransform(
+            currentItem.transform, zonePivot.position, zonePivot.rotation, animateItemToPlacementPointTime).WaitForCompletion();
+
         ItemPlaced?.Invoke();
     }
 

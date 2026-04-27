@@ -2,6 +2,7 @@ using DG.Tweening;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Playables;
+using Crafting;
 
 public class ItemShowcaseSequence : MonoBehaviour
 {
@@ -35,7 +36,7 @@ public class ItemShowcaseSequence : MonoBehaviour
             playableDirector.Pause();
         }
 
-        foreach(var itemData in craftingManager.CraftedTracker.GetUniqueItemsCrafted())
+        foreach(var itemData in craftingManager.GetUniqueItemsCrafted())
         {
             yield return ShowcaseItemRoutine(itemData);
         }
@@ -50,12 +51,12 @@ public class ItemShowcaseSequence : MonoBehaviour
 
     private IEnumerator ShowcaseItemRoutine(CraftingItemData itemData)
     {
-        var item = craftingManager.SpawnItem(itemData, itemSpawnInPos.position, itemSpawnInPos.rotation, wasCrafted: false);
-        yield return item.AnimateToRoutine(itemShowcasePos.position, itemShowcasePos.rotation, itemAnimateInTime, false);
+        var item = craftingManager.SpawnItem(itemData, itemSpawnInPos.position, itemSpawnInPos.rotation, doItemOnCraftedCallback: false);
+        yield return item.AnimateToRoutine(itemShowcasePos.position, itemShowcasePos.rotation, item.transform.localScale, itemAnimateInTime, false);
         item.SetOnInspectVFX(true);
         yield return new WaitForSeconds(itemShowcaseTime);
         item.SetOnInspectVFX(false);
-        yield return item.AnimateToRoutine(itemDespawnPos.position, itemDespawnPos.rotation, itemAnimateOutTime, false);
+        yield return item.AnimateToRoutine(itemDespawnPos.position, itemDespawnPos.rotation, item.transform.localScale, itemAnimateOutTime, false);
         Destroy(item.gameObject);
     }
 }

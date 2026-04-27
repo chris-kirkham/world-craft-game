@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class DraggablePhysicsObject : DraggableElement
+public class DraggablePhysicsObject : DraggableObject
 {
     [SerializeField] private Rigidbody rb;
     [SerializeField] private Collider coll;
@@ -10,8 +10,6 @@ public class DraggablePhysicsObject : DraggableElement
 
     private const float MinDistFromCamera = 1f;
     private const float MaxRaycastDist = 100f;
-    private const int MaxRaycastHits = 20;
-    private RaycastHit[] raycastHits = new RaycastHit[MaxRaycastHits];
 
     //hack to prevent... this re-enabling physics when it shouldn't
     public bool ReEnablePhysicsOnEndDrag { get; set; } = true;
@@ -66,7 +64,6 @@ public class DraggablePhysicsObject : DraggableElement
         }
     }
 
-    //private void FixedUpdate()
     private void Update()
     {
         if(rb && isDragging)

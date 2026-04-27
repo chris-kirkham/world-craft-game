@@ -131,7 +131,7 @@ namespace Timeline.Samples
         {
             Vector3 startScale = tweenInput.startLocalScale;
             Vector3 endScale = tweenInput.endLocalScale;
-            return Vector3.Lerp(startScale, endScale, progress) * weight;
+            return Vector3.LerpUnclamped(startScale, endScale, progress) * weight;
         }
 
         static TweenBehaviour GetTweenBehaviour(Playable playable)

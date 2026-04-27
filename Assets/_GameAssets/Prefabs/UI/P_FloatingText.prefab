@@ -184,6 +184,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  resetOnDisable: 1
   positionSeed: 0
   rotationSeed: 0
   setRandomSeedsOnEnable: 1
@@ -199,8 +200,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c0212fba7969294c8babd87ab134a8f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  text: {fileID: 1007614292472402940}
-  fadeInTime: 1
+  fadeInTime: 0.5
   fadeOutTime: 0.5
   fadeCurve:
     serializedVersion: 2
@@ -208,8 +208,8 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 0
-      outSlope: 0
+      inSlope: 2
+      outSlope: 2
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
@@ -226,3 +226,4 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  text: {fileID: 1007614292472402940}

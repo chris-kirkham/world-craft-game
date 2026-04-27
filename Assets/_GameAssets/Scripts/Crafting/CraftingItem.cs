@@ -1,10 +1,9 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 using DG.Tweening;
+using Crafting;
 
 [System.Serializable]
 public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
@@ -34,6 +33,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
     [SerializeField] private RectTransform canvasRect;
     [SerializeField] private Renderer image;
     [SerializeField] private RectTransform imageArea;
+    [SerializeField] private GameObject mirrorableArtRoot;
     [SerializeField] private TextMeshProUGUI nameText;
     [SerializeField] private FadeInOutText nameTextFade;
     [SerializeField] private TextMeshProUGUI debugImageText; //debug text for when image is missing
@@ -43,36 +43,34 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
     [SerializeField] private GameObject craftingPotentialVFX;
 
     private Material imageMat;
+    private GameObject mirroredArtInstance;
     private bool acceptInput = true;
     private bool canBeUsedInCraft = true;
     private bool isTouchingOtherItems;
     private Cursor cursor;
     private State state;
-
     private Sequence tweenSequence;
 
-    private bool isInspecting;
-
-    public CraftingItemData Data 
+    public CraftingItemData Data
     {
         get => itemData;
         set
         {
             itemData = value;
             UpdateData();
-        } 
+        }
     }
 
     //IStackable
     public bool CanStack => false;
     public Vector3 StackingOffset => stackingOffset;
     public Stacker CurrentStacker { get; set; }
-    
+
     public event Action OnUsedInSuccessfulCraft;
 
     private void OnEnable()
     {
-        if(CraftingManager.InstExists())
+        if (CraftingManager.InstExists())
         {
             CraftingManager.Inst.RegisterCraftingItem(this);
         }
@@ -90,7 +88,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
         SetState(State.Active);
         UpdateData();
 
-        if(craftingPotentialVFX)
+        if (craftingPotentialVFX)
         {
             craftingPotentialVFX.SetActive(false);
         }
@@ -109,7 +107,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
             cursor.RemoveCursorEventListener(this);
         }
 
-        if(CraftingManager.InstExists())
+        if (CraftingManager.InstExists())
         {
             CraftingManager.Inst.OnItemDisabledOrDestroyed(this);
         }
@@ -122,7 +120,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
 
         RemoveAllItemContacts();
 
-        if(tweenSequence != null)
+        if (tweenSequence != null)
         {
             //tweenSequence.Kill();
         }
@@ -130,13 +128,13 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
 
     private void OnTriggerEnter(Collider other)
     {
-        if(!canBeUsedInCraft)
+        if (!canBeUsedInCraft)
         {
             return;
         }
 
         var otherItem = other.GetComponentInParent<CraftingItem>();
-        if(otherItem && otherItem.canBeUsedInCraft)
+        if (otherItem && otherItem.canBeUsedInCraft)
         {
             AddItemContact(otherItem);
         }
@@ -153,7 +151,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
 
     private void AddItemContact(CraftingItem item)
     {
-        if(CraftingManager.InstExists())
+        if (CraftingManager.InstExists())
         {
             CraftingManager.Inst.AddItemContact(this, item);
         }
@@ -161,12 +159,12 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
 
     private void RemoveItemContact(CraftingItem item)
     {
-        if(CraftingManager.InstExists())
+        if (CraftingManager.InstExists())
         {
             CraftingManager.Inst.RemoveItemContact(this, item);
         }
 
-        if(!isTouchingOtherItems) //TODO: add this functionality back in
+        if (!isTouchingOtherItems) //TODO: add this functionality back in
         {
             SetPartialCraftVFX(false);
         }
@@ -174,7 +172,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
 
     private void RemoveAllItemContacts()
     {
-        if(CraftingManager.InstExists())
+        if (CraftingManager.InstExists())
         {
             CraftingManager.Inst.RemoveAllItemContactsForItem(this);
         }
@@ -185,17 +183,17 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
         if (!itemData)
         {
             Debug.Log($"No item data set for crafting item object {name}!");
-            if(Application.isPlaying)
+            if (Application.isPlaying)
             {
                 gameObject.name = "Item_MissingItemData";
             }
 
-            if(debugImageText)
+            if (debugImageText)
             {
                 debugImageText.text = "NO ITEM DATA";
                 debugImageText.gameObject.SetActive(true);
             }
-            
+
             return;
         }
 
@@ -206,11 +204,11 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
 
         gameObject.name = "Item_" + itemData.ItemName;
 
-        if(CraftingManager.InstExists())
+        if (CraftingManager.InstExists())
         {
             var itemsInPlay = CraftingManager.Inst.ActiveItems;
             int sameItemCount = 0;
-            foreach(var item in itemsInPlay)
+            foreach (var item in itemsInPlay)
             {
                 if (item.itemData == itemData)
                 {
@@ -218,13 +216,13 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
                 }
             }
 
-            if(sameItemCount > 0)
+            if (sameItemCount > 0)
             {
                 gameObject.name += $" ({sameItemCount})";
             }
         }
 
-        if(image && itemData.ThumbnailTex && Application.isPlaying) //don't get material instance + default to text if not playing
+        if (image && itemData.ThumbnailTex && Application.isPlaying) //don't get material instance + default to text if not playing
         {
             imageMat = image.material;
             if (imageMat)
@@ -234,16 +232,31 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
                 image.gameObject.SetActive(true);
             }
 
-            if(debugImageText)
+            if (debugImageText)
             {
                 debugImageText.gameObject.SetActive(false);
             }
         }
-        else if(debugImageText) //if no image set, use debug text
+        else if (debugImageText) //if no image set, use debug text
         {
             debugImageText.text = itemData.ItemName;
             debugImageText.gameObject.SetActive(true);
             image.gameObject.SetActive(false);
+        }
+
+        //mirror card art on rear
+        if (mirrorableArtRoot)
+        {
+            if (mirroredArtInstance)
+            {
+                Destroy(mirroredArtInstance);
+            }
+
+            mirroredArtInstance = Instantiate<GameObject>(
+                mirrorableArtRoot,
+                mirrorableArtRoot.transform.parent,
+                worldPositionStays: true);
+            mirroredArtInstance.transform.localScale = new Vector3(-1f, 1f, -1f);
         }
     }
 
@@ -261,30 +274,30 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
     private void OnDragEnd()
     {
         SetCollisionEnabled(true);
-        
+
         //check for stacking!!
-        if(CanStack && cursor)
+        if (CanStack && cursor)
         {
             //TODO: PROTOTYPE
             var hits = Physics.RaycastAll(transform.position, Vector3.down);
             var minDist = Mathf.Infinity;
             IStackable bestHit = null;
-            foreach(var hit in hits)
+            foreach (var hit in hits)
             {
                 var stackable = hit.transform.GetComponentInParent<IStackable>();
-                if(stackable == null || stackable == (IStackable)this)
+                if (stackable == null || stackable == (IStackable)this)
                 {
                     continue;
                 }
 
-                if(hit.distance < minDist)
+                if (hit.distance < minDist)
                 {
                     minDist = hit.distance;
                     bestHit = stackable;
                 }
             }
 
-            if(bestHit != null)
+            if (bestHit != null)
             {
                 Stacker.Stack(bestHit, this);
             }
@@ -307,11 +320,11 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
 
     public void OnCraftAttempt(CraftingManager.CraftingResultState resultState)
     {
-        if(resultState == CraftingManager.CraftingResultState.SuccessfulCraft)
+        if (resultState == CraftingManager.CraftingResultState.SuccessfulCraft)
         {
             OnSuccessfulCraft();
         }
-        else if(resultState == CraftingManager.CraftingResultState.PartialIngredientMatch)
+        else if (resultState == CraftingManager.CraftingResultState.PartialIngredientMatch)
         {
             SetPartialCraftVFX(true);
         }
@@ -323,7 +336,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
 
     public void SetPartialCraftVFX(bool on)
     {
-        if(craftingPotentialVFX)
+        if (craftingPotentialVFX)
         {
             craftingPotentialVFX.SetActive(on);
         }
@@ -373,7 +386,8 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
 
     private void SetPhysAndCollision(bool enabled)
     {
-        rb.isKinematic = !enabled;
+        //rb.isKinematic = !enabled;
+        rb.isKinematic = true;
         SetCollisionEnabled(enabled);
         dragHandler.ReEnablePhysicsOnEndDrag = enabled; //hack
     }
@@ -389,17 +403,12 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
         }
     }
 
-    public void AnimateTo(Vector3 position_WS, Quaternion rotation_WS, float time, bool returnToPrevStateOnEndAnim = true)
-    {
-       StartCoroutine(AnimateToRoutine(position_WS, rotation_WS, time, returnToPrevStateOnEndAnim));
-    }
-
-    public IEnumerator AnimateToRoutine(Vector3 position_WS, Quaternion rotation_WS, float time, bool returnToPrevStateOnEndAnim = true)
+    public IEnumerator AnimateToRoutine(Vector3 position_WS, Quaternion rotation_WS, Vector3 localScale, float time, bool returnToPrevStateOnEndAnim = true)
     {
         var prevState = state;
         SetState(State.Animatable);
 
-        if(time <= 0f)
+        if (time <= 0f)
         {
             transform.position = position_WS;
             transform.rotation = rotation_WS;
@@ -414,12 +423,9 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
             tweenSequence = DOTween.Sequence(transform);
             tweenSequence.Append(transform.DOMove(position_WS, time));
             tweenSequence.Join(transform.DORotate(rotation_WS.eulerAngles, time));
+            tweenSequence.Join(transform.DOScale(localScale, time));
 
             yield return tweenSequence.WaitForCompletion();
-
-            //necessary?
-            transform.position = position_WS;
-            transform.rotation = rotation_WS;
         }
 
         if (returnToPrevStateOnEndAnim)
@@ -430,44 +436,20 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
 
     public void SetOnInspectVFX(bool inspecting)
     {
-        isInspecting = inspecting;
         if (inspecting)
         {
             if (nameTextFade)
             {
-                nameTextFade.EnableAndPlayInClip();
+                nameTextFade.FadeIn();
             }
         }
         else
         {
             if (nameTextFade)
             {
-                nameTextFade.PlayClipThenDisable();
+                nameTextFade.FadeOut();
             }
         }
-    }
-
-    private IEnumerator DoInspectRoutine(Vector3 endPos, Quaternion endRotation)
-    {
-        //TODO: placeholder position and rotation!
-        var cam = cursor.Cam;
-        var targetPos = cam.transform.position + (cam.transform.forward * 2f);
-        var targetRotation = Quaternion.identity;
-
-        var prevPos = transform.position;
-        var prevRotation = transform.rotation;
-        var prevState = state;
-
-        yield return AnimateToRoutine(targetPos, targetRotation, 0.5f, returnToPrevStateOnEndAnim: false);
-
-        while(isInspecting)
-        {
-            yield return null;
-        }
-
-        //TODO: fix grab ending on this (due to going into animation state) and/or think about desired behaviour
-        yield return AnimateToRoutine(prevPos, prevRotation, 0.5f, returnToPrevStateOnEndAnim: false);
-        SetState(prevState);
     }
 
     public void OnCursorEvent(Cursor.EventID e)
@@ -480,7 +462,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
                 SetOnInspectVFX(true);
             }
         }
-        else if(e == Cursor.EventID.RightClickUp)
+        else if (e == Cursor.EventID.RightClickUp)
         {
             SetOnInspectVFX(false);
         }

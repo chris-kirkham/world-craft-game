@@ -871,6 +871,10 @@ PrefabInstance:
       value: P_Cursor
       objectReference: {fileID: 0}
     - target: {fileID: 9074353654284237489, guid: 1b78d8c61f434774c993ce18a6d2b292, type: 3}
+      propertyPath: cam
+      value: 
+      objectReference: {fileID: 8597685863066880409}
+    - target: {fileID: 9074353654284237489, guid: 1b78d8c61f434774c993ce18a6d2b292, type: 3}
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}

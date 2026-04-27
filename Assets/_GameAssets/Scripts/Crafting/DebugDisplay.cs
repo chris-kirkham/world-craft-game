@@ -38,7 +38,7 @@ public class DebugDisplay : MonoBehaviour
         }
     }
 
-    public void SetCursorDebugInfo(Cursor cursor, HashSet<DraggableElement> dragRequests)
+    public void SetCursorDebugInfo(Cursor cursor, HashSet<DraggableObject> dragRequests)
     {
         cursorDebugInfo = "Cursor: ";
         cursorDebugInfo += $"screen-space pos = {cursor.ClampedPosition_SS}, world pos = {cursor.ClampedPosition_WS}\n";

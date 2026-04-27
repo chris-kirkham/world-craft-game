@@ -135,6 +135,8 @@ PlayableDirector:
     value: {fileID: 5076261990355187499}
   - key: {fileID: -4948076082397366114, guid: 9a7d3c00fb3403b47ac2fa2364261805, type: 2}
     value: {fileID: 2031455186408348669}
+  - key: {fileID: -2260800264413775122, guid: 9a7d3c00fb3403b47ac2fa2364261805, type: 2}
+    value: {fileID: 7986348182382456516}
   m_ExposedReferences:
     m_References:
     - 0b5f234bbd8d229429ac1342fd2fc732: {fileID: 6778098213755058378}
@@ -154,6 +156,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playableDirector: {fileID: 8206090419114522716}
+  preChooseItemPauseTime: 14
   playerCam: {fileID: 0}
   topText: {fileID: 5513354573777839099}
   startingItemChoices:
@@ -438,6 +441,14 @@ PrefabInstance:
       propertyPath: pivotTransform
       value: 
       objectReference: {fileID: 3933655754325055635}
+    - target: {fileID: 5309277957613198270, guid: 487d4effa66f6654aabc29446e8724f2, type: 3}
+      propertyPath: fadeInTime
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5309277957613198270, guid: 487d4effa66f6654aabc29446e8724f2, type: 3}
+      propertyPath: fadeOutTime
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7780025194016085633, guid: 487d4effa66f6654aabc29446e8724f2, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5

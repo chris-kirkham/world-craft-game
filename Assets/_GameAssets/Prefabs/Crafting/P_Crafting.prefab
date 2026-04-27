@@ -9908,11 +9908,13 @@ MonoBehaviour:
   startSequence: {fileID: 0}
   convergeSequence:
     convergePoint: {fileID: 2790847248887420006}
+    playableDirector: {fileID: 859082464213097581}
+    postMoveToOuterSequence: {fileID: 11400000, guid: 85b25485782cc9a489eb8d1729f309dd, type: 2}
     itemUpIncrement: 0.1
     outerRadius: 1
     lerpToOuterTime: 0.75
     convergeInCentreTime: 0.5
-  postConvergeSequence: {fileID: 11400000, guid: 85b25485782cc9a489eb8d1729f309dd, type: 2}
+  postConvergeSequence: {fileID: 0}
   spawnItemSequence:
     craftingBoard: {fileID: 5835052037880426058}
     playableDirector: {fileID: 859082464213097581}
@@ -9935,7 +9937,7 @@ PlayableDirector:
   m_GameObject: {fileID: 7679355639969832737}
   m_Enabled: 1
   serializedVersion: 3
-  m_PlayableAsset: {fileID: 11400000, guid: abad6bfb54cbe2541827a431d5d7bf52, type: 2}
+  m_PlayableAsset: {fileID: 11400000, guid: 5b8e82ac333cb7a40b4015faf401f109, type: 2}
   m_InitialState: 0
   m_WrapMode: 2
   m_DirectorUpdateMode: 1

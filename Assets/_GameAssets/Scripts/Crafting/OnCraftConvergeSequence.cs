@@ -2,6 +2,8 @@ using DG.Tweening;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Playables;
+using UnityEngine.Timeline;
 
 namespace Crafting
 {
@@ -9,6 +11,8 @@ namespace Crafting
     public class OnCraftConvergeSequence
     {
         [SerializeField] private Transform convergePoint;
+        [SerializeField] private PlayableDirector playableDirector;
+        [SerializeField] private TimelineAsset postMoveToOuterSequence;
         [SerializeField, Tooltip("Amount each item should be raised when converging to avoid z-fighting (and to look good)")]
         private float itemUpIncrement = 0.1f;
         [SerializeField] private float outerRadius = 1f;
@@ -55,6 +59,12 @@ namespace Crafting
                 ingredientsList[i].transform.DOMove(targetPositions[i], lerpToOuterTime);
             }
             yield return new WaitForSeconds(lerpToOuterTime);
+
+            //N.B. this should be simultaneous with converging 
+            if(playableDirector && postMoveToOuterSequence)
+            {
+                playableDirector.Play(postMoveToOuterSequence);
+            }
 
             //make ingredients converge in the centre (and shrink)!
             for (int i = 0; i < numIngredients; i++)

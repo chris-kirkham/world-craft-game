@@ -97,6 +97,7 @@ public class IntroSequence : MonoBehaviour
         {
             var startingItemTform = startingItem.transform;
 
+            /*
             if (startingItem.ItemData == chosenItemData) 
             {
                 //if chosen item is this one, replace it with the actual item without doing the flip anim
@@ -107,6 +108,7 @@ public class IntroSequence : MonoBehaviour
                 yield return new WaitForSeconds((spawnAnimFlipTime * 2f) + spawnAnimWaitTime);
             }
             else //do spawn animation
+            */
             {
                 //roll starting item card so its item type isn't visible by the camera
                 var cam = Cursor.Inst.Cam;

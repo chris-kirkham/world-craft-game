@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.03.00">
+	<object class="AudioFile" id="{eee4a1b7-48ea-4399-ba90-3ab509002c34}">
+		<property name="assetPath">
+			<value>kenney_casino-audio/Audio/chips-handle-4.ogg</value>
+		</property>
+		<property name="frequencyInKHz">
+			<value>44.0999985</value>
+		</property>
+		<property name="channelCount">
+			<value>2</value>
+		</property>
+		<property name="length">
+			<value>0.35934240362811792</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{06db328a-9fc7-4573-8e4f-defcf8a059aa}</destination>
+		</relationship>
+	</object>
+</objects>

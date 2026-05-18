@@ -1,24 +1,29 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
 //base class for click-and-draggable items
 public abstract class DraggableObject : MonoBehaviour, ICursorEventListener
 {
+    [SerializeField] private bool dragEnabled = true;
+    [SerializeField] private bool requiresPlacementPoint;
+    
     protected bool isDragging;
 
     protected virtual Sprite OnHoverDragSprite { get; set; }
 
-    protected Cursor.SpriteOverride cursorSpriteOverride;
+    protected Cursor.SpriteOverride dragPreviewCursorSprite;
 
     public UnityEvent DragStarted;
     public UnityEvent DragEnded;
 
-    private bool dragEnabled = true;
+    private HashSet<DraggablePlacementPoint> hoveredPlacementPoints = new HashSet<DraggablePlacementPoint>();
+    private DraggablePlacementPoint returnPoint;
 
     protected virtual void OnEnable()
     {
-        cursorSpriteOverride = new Cursor.SpriteOverride()
+        dragPreviewCursorSprite = new Cursor.SpriteOverride()
         {
             sprite = OnHoverDragSprite
         };
@@ -40,9 +45,19 @@ public abstract class DraggableObject : MonoBehaviour, ICursorEventListener
             Cursor.Inst.RemoveCursorEventListener(this);
         }
 
-        CancelDrag();
+        EndDrag();
         DragStarted.RemoveAllListeners();
         DragEnded.RemoveAllListeners();
+    }
+
+    //"Try" because if multiple draggables want to start dragging on the same tick,
+    //the cursor decides which is the best option (why does the cursor do this? maybe move it to a different class)
+    public void TryStartDrag()
+    {
+        if (dragEnabled && Cursor.InstExists())
+        {
+            Cursor.Inst.RequestDrag(this);
+        }
     }
 
     public void StartDrag()
@@ -57,33 +72,43 @@ public abstract class DraggableObject : MonoBehaviour, ICursorEventListener
         DragStarted?.Invoke();
     }
 
-    //"Try" because if multiple draggables want to start dragging on the same tick,
-    //the cursor decides which is the best option (why does the cursor do this? maybe move it to a different class)
-    public void TryStartDrag()
+    public void EndDrag()
     {
-        if(Cursor.InstExists())
+        CancelDragRequest();
+
+        if (!isDragging)
         {
-            Cursor.Inst.AddToDragRequests(this);
+            return;
         }
+
+        isDragging = false;
+
+        var bestPlacementPoint = GetBestAvailablePlacementPoint();
+        var placed = bestPlacementPoint && bestPlacementPoint.TryPlaceObject(this);
+        if(!placed && requiresPlacementPoint)
+        {
+            if(!TryReturn())
+            {
+                Debug.Log($"Dropped draggable that requires a placement point," +
+                        $" but none found and no return point set! What to do here?");
+            }
+        }
+        
+        AddHoveredPoint(null);
+        OnEndDrag();
+        DragEnded?.Invoke();
     }
 
-    public void CancelDrag()
+    private void CancelDragRequest()
     {
         var cursor = Cursor.Inst;
         if (cursor)
         {
-            cursor.RemoveFromDragRequests(this);
-            if(cursor.IsHovered(this))
+            cursor.RemoveDragRequest(this);
+            if (cursor.IsHovered(this))
             {
-                cursor.RemoveSpriteOverride(cursorSpriteOverride);
+                cursor.RemoveSpriteOverride(dragPreviewCursorSprite);
             }
-        }
-
-        if (isDragging)
-        {
-            isDragging = false;
-            OnEndDrag();
-            DragEnded?.Invoke();
         }
     }
 
@@ -100,8 +125,56 @@ public abstract class DraggableObject : MonoBehaviour, ICursorEventListener
         dragEnabled = enabled;
         if(!dragEnabled)
         {
-            CancelDrag();
+            EndDrag();
         }
+    }
+
+    public void AddHoveredPoint(DraggablePlacementPoint placementPoint)
+    {
+        hoveredPlacementPoints.Add(placementPoint);
+    }
+
+    public void RemoveHoveredPoint(DraggablePlacementPoint placementPoint)
+    {
+        hoveredPlacementPoints.Remove(placementPoint);
+    }
+
+    public void SetReturnPoint(DraggablePlacementPoint placementPoint)
+    {
+        returnPoint = placementPoint;
+    }
+
+    public bool TryReturn()
+    {
+        return returnPoint && returnPoint.TryPlaceObject(this);
+    }
+
+    private DraggablePlacementPoint GetBestAvailablePlacementPoint()
+    {
+        if(hoveredPlacementPoints == null || hoveredPlacementPoints.Count == 0)
+        {
+            return null;
+        }
+
+        //get closest point - make this more sophisticated?
+        DraggablePlacementPoint bestPoint = null;
+        var minDist = Mathf.Infinity;
+        foreach(var point in hoveredPlacementPoints)
+        {
+            if(!point) //TODO: CLEAN WAY OF REMOVING NULL POINTS
+            {
+                continue;
+            }
+
+            var sqrDist = Vector3.SqrMagnitude(transform.position - point.transform.position);
+            if (sqrDist < minDist)
+            {
+                bestPoint = point;
+                minDist = sqrDist;
+            }
+        }
+
+        return bestPoint;
     }
 
     public virtual void OnCursorEvent(Cursor.EventID e)
@@ -109,13 +182,13 @@ public abstract class DraggableObject : MonoBehaviour, ICursorEventListener
         switch(e)
         {
             case Cursor.EventID.EnterElement:
-                Cursor.Inst.AddSpriteOverride(cursorSpriteOverride);
+                Cursor.Inst.AddSpriteOverride(dragPreviewCursorSprite);
                 break;
             case Cursor.EventID.ExitElement:
                 if (!isDragging)
                 {
-                    Cursor.Inst.RemoveSpriteOverride(cursorSpriteOverride);
-                    CancelDrag();
+                    Cursor.Inst.RemoveSpriteOverride(dragPreviewCursorSprite);
+                    EndDrag();
                 }
                 break;
             case Cursor.EventID.LeftClickDown:
@@ -125,7 +198,7 @@ public abstract class DraggableObject : MonoBehaviour, ICursorEventListener
                 }
                 break;
             case Cursor.EventID.LeftClickUp:
-                CancelDrag();
+                EndDrag();
                 break;
             default:
                 break;

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.03.00">
+	<object class="AudioFile" id="{16f7b281-a581-4b2d-a291-a00f1889968e}">
+		<property name="assetPath">
+			<value>kenney_casino-audio/Audio/chips-collide-4.ogg</value>
+		</property>
+		<property name="frequencyInKHz">
+			<value>44.0999985</value>
+		</property>
+		<property name="channelCount">
+			<value>2</value>
+		</property>
+		<property name="length">
+			<value>0.21562358276643992</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{06db328a-9fc7-4573-8e4f-defcf8a059aa}</destination>
+		</relationship>
+	</object>
+</objects>

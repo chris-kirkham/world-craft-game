@@ -1,0 +1,6 @@
+{0caec76c-118c-4e78-a159-f270981f821a} bank:/CraftingItem
+{ed7b232c-1c27-422f-a059-b435ebf45cb3} bank:/Master
+{756603f8-6d5c-0e6d-2610-3ecb1a075a2b} bank:/Master.strings
+{2c29d80a-f7f1-4c00-872e-43a3793ed6b8} bus:/
+{3b3d62f3-00fe-450f-9c42-f69b1226eb89} bus:/Reverb
+{79e96c93-11ae-4871-8dc0-9f9efce9b3f7} event:/CraftingItem_OnGrab

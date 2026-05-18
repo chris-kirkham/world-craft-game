@@ -52,11 +52,13 @@ public class ItemShowcaseSequence : MonoBehaviour
     private IEnumerator ShowcaseItemRoutine(CraftingItemData itemData)
     {
         var item = craftingManager.SpawnItem(itemData, itemSpawnInPos.position, itemSpawnInPos.rotation, doItemOnCraftedCallback: false);
-        yield return item.AnimateToRoutine(itemShowcasePos.position, itemShowcasePos.rotation, item.transform.localScale, itemAnimateInTime, false);
+        item.SetState(CraftingItem.State.Animatable);
+        yield return Tweening.DoTransform(item.transform, itemShowcasePos.position, itemShowcasePos.rotation, item.transform.localScale, itemAnimateInTime);
         item.SetOnInspectVFX(true);
         yield return new WaitForSeconds(itemShowcaseTime);
         item.SetOnInspectVFX(false);
-        yield return item.AnimateToRoutine(itemDespawnPos.position, itemDespawnPos.rotation, item.transform.localScale, itemAnimateOutTime, false);
+        yield return Tweening.DoTransform(item.transform, itemDespawnPos.position, itemDespawnPos.rotation, item.transform.localScale, itemAnimateOutTime);
+        item.SetState(CraftingItem.State.Active);
         Destroy(item.gameObject);
     }
 }

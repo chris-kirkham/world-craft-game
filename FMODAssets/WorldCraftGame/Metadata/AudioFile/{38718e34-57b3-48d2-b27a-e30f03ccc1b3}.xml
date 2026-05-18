@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.03.00">
+	<object class="AudioFile" id="{38718e34-57b3-48d2-b27a-e30f03ccc1b3}">
+		<property name="assetPath">
+			<value>kenney_casino-audio/Audio/dice-throw-3.ogg</value>
+		</property>
+		<property name="frequencyInKHz">
+			<value>44.0999985</value>
+		</property>
+		<property name="channelCount">
+			<value>2</value>
+		</property>
+		<property name="length">
+			<value>0.57498866213151922</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{06db328a-9fc7-4573-8e4f-defcf8a059aa}</destination>
+		</relationship>
+	</object>
+</objects>

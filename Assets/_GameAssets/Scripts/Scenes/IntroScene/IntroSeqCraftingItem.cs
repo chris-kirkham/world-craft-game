@@ -3,15 +3,20 @@ using UnityEngine;
 public class IntroSeqCraftingItem : MonoBehaviour, ICursorEventListener
 {
     [SerializeField] private CraftingItem item;
+    [SerializeField] private CraftingItemData itemData;
     [SerializeField] private IntroSequence introSequence;
     [SerializeField] private FadeInOutText onHoverText;
 
     private bool isHovered;
 
-    public CraftingItemData ItemData => item.Data;
-
     private void OnEnable()
     {
+        if(item)
+        {
+            item.Data = itemData;
+            item.enabled = false;
+        }
+
         if (Cursor.InstExists())
         {
             Cursor.Inst.AddCursorEventListener(this);

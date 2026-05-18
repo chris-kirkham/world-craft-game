@@ -84,6 +84,18 @@ PrefabInstance:
       propertyPath: m_text
       value: Earth
       objectReference: {fileID: 0}
+    - target: {fileID: 9176190644264876341, guid: 668d21fcae2ec3b4590f94b650ec3915, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9176190644264876341, guid: 668d21fcae2ec3b4590f94b650ec3915, type: 3}
+      propertyPath: dragEnabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9176190644264876341, guid: 668d21fcae2ec3b4590f94b650ec3915, type: 3}
+      propertyPath: requiresPlacementPoint
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -118,7 +130,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 1670723070273814482}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4413316110077644792}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 45431b3d30817b04fadf52221fe27a8b, type: 3}
   m_Name: 

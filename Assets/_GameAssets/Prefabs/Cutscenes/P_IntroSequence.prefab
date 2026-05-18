@@ -571,10 +571,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3933655754325055635}
     m_Modifications:
-    - target: {fileID: 2332552631947658464, guid: 487d4effa66f6654aabc29446e8724f2, type: 3}
-      propertyPath: pivotTransform
-      value: 
-      objectReference: {fileID: 3933655754325055635}
     - target: {fileID: 7780025194016085633, guid: 487d4effa66f6654aabc29446e8724f2, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -696,10 +692,6 @@ PrefabInstance:
       propertyPath: m_fontColor32.rgba
       value: 4294967295
       objectReference: {fileID: 0}
-    - target: {fileID: 2332552631947658464, guid: 487d4effa66f6654aabc29446e8724f2, type: 3}
-      propertyPath: pivotTransform
-      value: 
-      objectReference: {fileID: 3933655754325055635}
     - target: {fileID: 7780025194016085633, guid: 487d4effa66f6654aabc29446e8724f2, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -818,6 +810,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 5153596375909007411}
     m_Modifications:
     - target: {fileID: 1689394894573418921, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
+      propertyPath: itemData
+      value: 
+      objectReference: {fileID: 11400000, guid: 299c2723918579e43af015a05132e2e1, type: 2}
+    - target: {fileID: 1689394894573418921, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
       propertyPath: onHoverText
       value: 
       objectReference: {fileID: 7702732831558076957}
@@ -923,10 +919,6 @@ PrefabInstance:
       propertyPath: m_fontColor32.rgba
       value: 4294967295
       objectReference: {fileID: 0}
-    - target: {fileID: 2332552631947658464, guid: 487d4effa66f6654aabc29446e8724f2, type: 3}
-      propertyPath: pivotTransform
-      value: 
-      objectReference: {fileID: 3933655754325055635}
     - target: {fileID: 7780025194016085633, guid: 487d4effa66f6654aabc29446e8724f2, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -1045,6 +1037,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 5153596375909007411}
     m_Modifications:
     - target: {fileID: 1689394894573418921, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
+      propertyPath: itemData
+      value: 
+      objectReference: {fileID: 11400000, guid: a5ecc6b4dca2d814fb3b56f35b0be370, type: 2}
+    - target: {fileID: 1689394894573418921, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
       propertyPath: onHoverText
       value: 
       objectReference: {fileID: 8779798023472955518}
@@ -1142,6 +1138,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5153596375909007411}
     m_Modifications:
+    - target: {fileID: 1689394894573418921, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
+      propertyPath: itemData
+      value: 
+      objectReference: {fileID: 11400000, guid: 33fbd6f9fc3345f4c842fd6e648b25e7, type: 2}
     - target: {fileID: 1689394894573418921, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
       propertyPath: onHoverText
       value: 
@@ -1244,10 +1244,6 @@ PrefabInstance:
       propertyPath: m_fontColor32.rgba
       value: 4294967295
       objectReference: {fileID: 0}
-    - target: {fileID: 2332552631947658464, guid: 487d4effa66f6654aabc29446e8724f2, type: 3}
-      propertyPath: pivotTransform
-      value: 
-      objectReference: {fileID: 3933655754325055635}
     - target: {fileID: 7780025194016085633, guid: 487d4effa66f6654aabc29446e8724f2, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -1365,6 +1361,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5153596375909007411}
     m_Modifications:
+    - target: {fileID: 1689394894573418921, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
+      propertyPath: itemData
+      value: 
+      objectReference: {fileID: 11400000, guid: c03eaadaeb521804ba15be4202e99e2a, type: 2}
     - target: {fileID: 1689394894573418921, guid: 5be689d622a00d740bf33c4d94e1aa3d, type: 3}
       propertyPath: onHoverText
       value: 

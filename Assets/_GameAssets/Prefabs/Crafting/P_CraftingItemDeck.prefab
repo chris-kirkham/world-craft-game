@@ -249,10 +249,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c1bd948dde9af0429d90bfcf94e1ed2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  returnable: 1
   startingDeck: {fileID: 0}
   itemHeight: 0.01
   itemZOffset: 0.05
   populateOnEnable: 0
+  singleItemType: 1
+  infinite: 1
   animateItemToDeckTime: 0.4
   onHoverPreviewVFX: {fileID: 7042483114180064637}
 --- !u!1 &8176069320426752429

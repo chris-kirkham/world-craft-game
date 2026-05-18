@@ -4,7 +4,7 @@ using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class CrafterPlacementZone : MonoBehaviour, ICursorEventListener
+public class CrafterPlacementZone : DraggablePlacementPoint, ICursorEventListener
 {
     private enum State
     {
@@ -69,16 +69,13 @@ public class CrafterPlacementZone : MonoBehaviour, ICursorEventListener
         {
             return;
         }
-
-        var prevState = state;
-        state = newState;
-
-        if (prevState == State.PlacementPreview)
+        
+        if (state == State.PlacementPreview)
         {
             StopPlacementPreview();
         }
 
-        switch (state)
+        switch (newState)
         {
             case State.Empty:
                 SetItem(null);
@@ -93,6 +90,8 @@ public class CrafterPlacementZone : MonoBehaviour, ICursorEventListener
             default:
                 break;
         }
+
+        state = newState;
     }
 
     private IEnumerator PlaceItemRoutine()
@@ -103,10 +102,18 @@ public class CrafterPlacementZone : MonoBehaviour, ICursorEventListener
             yield break;
         }
 
-        yield return Tweening.DoTransform(
-            currentItem.transform, zonePivot.position, zonePivot.rotation, animateItemToPlacementPointTime).WaitForCompletion();
+        if(CanPlace(currentItem))
+        {
+            yield return Tweening.DoTransform(
+                currentItem.transform, zonePivot.position, zonePivot.rotation, animateItemToPlacementPointTime).WaitForCompletion();
 
-        ItemPlaced?.Invoke();
+            ItemPlaced?.Invoke();
+        }
+        else
+        {
+            Debug.LogError($"Failed to place item! This shouldn't happen.");
+            SetState(State.PlacementPreview);
+        }
     }
 
     private void SetItem(CraftingItem item)
@@ -158,35 +165,46 @@ public class CrafterPlacementZone : MonoBehaviour, ICursorEventListener
     {
     }
 
-    public void OnCursorEvent(Cursor.EventID e)
+    protected override bool CanPlace(DraggableObject obj)
     {
-        if(e == Cursor.EventID.EnterElement) //is cursor over this placement zone?
+        return state != State.ItemPlaced;
+    }
+
+    protected override void PlaceObject(DraggableObject obj)
+    {
+        SetState(State.ItemPlaced);
+    }
+
+    protected override void OnDraggableEnterPlacementArea(DraggableObject obj)
+    {
+        base.OnDraggableEnterPlacementArea(obj);
+
+        if (!currentItem && Cursor.Inst.CurrentDragTarget is CraftingItem)
         {
-            if(!currentItem
-                && Cursor.Inst.CurrentDragTarget
-                && Cursor.Inst.CurrentDragTarget.TryGetComponent<CraftingItem>(out var item)) //TODO: brittle! fails if item isn't on the same object as drag handler)
-            {
-                SetItem(item);
-                SetState(State.PlacementPreview);
-            }
+            SetItem((CraftingItem)Cursor.Inst.CurrentDragTarget);
+            SetState(State.PlacementPreview);
         }
-        else if(e == Cursor.EventID.ExitElement)
+    }
+
+    protected override void OnDraggableExitPlacementArea(DraggableObject obj)
+    {
+        base.OnDraggableExitPlacementArea(obj);
+
+        //dragged item moved away from placement zone - go back to empty state 
+        if (state == State.PlacementPreview)
         {
-            //dragged item moved away from placement zone - go back to empty state 
-            if (state == State.PlacementPreview)
-            {
-                SetState(State.Empty);
-            }
+            SetState(State.Empty);
         }
-        else if(e == Cursor.EventID.LeftClickDown && state == State.ItemPlaced && Cursor.Inst.IsHovered(this))
+    }
+
+    public override void OnCursorEvent(Cursor.EventID e)
+    {
+        base.OnCursorEvent(e);
+
+        if(e == Cursor.EventID.LeftClickDown && state == State.ItemPlaced && Cursor.Inst.IsHovered(this))
         {
             //pick up placed item
             GrabCurrentItem();
-        }
-        else if (e == Cursor.EventID.LeftClickUp && state == State.PlacementPreview) 
-        {
-            //release a dragged crafting item over this placement zone
-            SetState(State.ItemPlaced);
         }
     }
 

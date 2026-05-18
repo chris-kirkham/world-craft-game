@@ -54,7 +54,6 @@ namespace Crafting
             }
         }
 
-        //TODO: prototype, optimise!!
         public void MoveItemToGrid(CraftingItem item, bool stackSameItems = true)
         {
             Vector2Int? firstEmpty = null;
@@ -76,7 +75,7 @@ namespace Crafting
                     }
                     else if (stackSameItems && deck.PeekTopItem().Data == item.Data)
                     {
-                        deck.AddItemToTopDeck(item);
+                        deck.TryPlaceObject(item);
                         return;
                     }
                 }
@@ -84,7 +83,7 @@ namespace Crafting
 
             if(firstEmpty.HasValue)
             {
-                grid[firstEmpty.Value.x, firstEmpty.Value.y].AddItemToTopDeck(item);
+                grid[firstEmpty.Value.x, firstEmpty.Value.y].TryPlaceObject(item);
             }
             else
             {

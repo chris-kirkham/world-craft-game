@@ -10,7 +10,6 @@ public class PerlinFloat : MonoBehaviour
     [SerializeField] private bool useLocalPosition;
     [SerializeField] private bool useLocalRotation;
     [Space]
-    [SerializeField] private bool useParentTransformAsPivot;
     [SerializeField] private Transform pivotTransform;
     [Space]
     [SerializeField] private bool rampUpOnEnable;
@@ -47,7 +46,7 @@ public class PerlinFloat : MonoBehaviour
     {
         if(resetOnDisable)
         {
-            if(useParentTransformAsPivot && pivotTransform)
+            if(pivotTransform)
             {
                 transform.position = pivotTransform.position;
                 transform.rotation = pivotTransform.rotation;
@@ -75,8 +74,8 @@ public class PerlinFloat : MonoBehaviour
             }
         }
 
-        var pivotPos = useParentTransformAsPivot ? pivotTransform.position : initialPos; 
-        var pivotRotation = useParentTransformAsPivot ? pivotTransform.rotation : initialRotation;
+        var pivotPos = pivotTransform ? pivotTransform.position : initialPos; 
+        var pivotRotation = pivotTransform ? pivotTransform.rotation : initialRotation;
 
         //position
         var posTime = (Time.time + positionSeed) * positionFloatSpeed;

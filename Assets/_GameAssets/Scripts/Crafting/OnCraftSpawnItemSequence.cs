@@ -59,17 +59,14 @@ namespace Crafting
             //spawn item
             yield return SpawnItemToGridRoutine(item, SpawnPos, Quaternion.identity);
 
-            //TODO: "new WaitForSeconds" allocates - make a helper class to get WaitForSecondses without allocation
-            yield return new WaitForSeconds(multiItemSpawnDelay);
-
             //spawn any extra products that are created when this item spawns
             if (item.ExtraProducts.Count > 0)
             {
                 foreach (var extraProduct in item.ExtraProducts)
                 {
+                    yield return new WaitForSeconds(multiItemSpawnDelay);
                     yield return SpawnItemToGridRoutine(extraProduct, SpawnPos, Quaternion.identity);
                     Debug.Log($"Spawned extra product {extraProduct.ItemName} from craft result {item.ItemName}!");
-                    yield return new WaitForSeconds(multiItemSpawnDelay);
                 }
             }
         }
@@ -92,10 +89,17 @@ namespace Crafting
 
             var wasCraftedPreviously = craftingManager.WasItemCraftedPreviously(itemData);
             var item = craftingManager.SpawnItem(itemData, startPos_WS, startRotation_WS, doItemOnCraftedCallback: true);
+
             
-            if(!wasCraftedPreviously && inspectItemOnFirstCraft)
+            if (!wasCraftedPreviously && inspectItemOnFirstCraft)
             {
                 yield return inspectSequence.InspectItem(item);
+            }
+            else
+            {
+                //make item scale up as it animates in
+                item.transform.localScale = Vector3.zero;
+                yield return item.transform.DOScale(1f, 0.5f).WaitForCompletion();
             }
 
             craftingManager.MoveItemToGrid(item);

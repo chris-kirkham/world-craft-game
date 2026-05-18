@@ -115,7 +115,10 @@ namespace Crafting
                 }
             }
 
-            TryCraft(placedItems);
+            if(placedItems.Count > 1)
+            {
+                TryCraft(placedItems);
+            }
         }
 
         public void AddItemContact(CraftingItem item, CraftingItem contactingItem)
@@ -139,6 +142,7 @@ namespace Crafting
 
             //TODO: allocation
             var anySuccessfulCraft = false;
+            var anyPartialMatch = false;
             var successfulCrafts = new List<CraftingItemData>();
             for (int i = 0; i < numResults; i++)
             {
@@ -147,13 +151,17 @@ namespace Crafting
                     successfulCrafts.Add(craftResults[i]);
                     anySuccessfulCraft = true;
                 }
+                else if (craftResultStates[i] == CraftingResultState.PartialIngredientMatch)
+                {
+                    anyPartialMatch = true;
+                }
             }
 
             if (anySuccessfulCraft)
             {
                 DoSuccessfulCrafts(ingredients, successfulCrafts);
             }
-            else
+            else if(anyPartialMatch)
             {
                 foreach (var ingredient in ingredients)
                 {
@@ -161,9 +169,14 @@ namespace Crafting
                     ingredient.OnCraftAttempt(CraftingResultState.PartialIngredientMatch);
                 }
             }
+            else
+            {
+                MoveItemsToGrid(ingredients);
+            }
 
             return numResults;
         }
+
 
         private int GetCraftResultsAllItems(ICollection<CraftingItem> ingredients, CraftingItemData[] results, CraftingResultState[] resultStates)
         {
@@ -175,27 +188,27 @@ namespace Crafting
             int numResults = 0;
             CraftingItemData currentResult = null;
             CraftingResultState currentResultState;
-            foreach (var item in itemDatabase.ItemList)
+            foreach (var result in itemDatabase.ItemList)
             {
                 //exit if item isn't craftable by two or more other items
-                if (item.Prerequisites.Count < 2)
+                if (result.Prerequisites.Count < 2)
                 {
                     continue;
                 }
 
                 currentResultState = CraftingResultState.None;
-                currentResult = item;
+                currentResult = result;
 
                 //check number of matching ingredients we have to this item
-                int numMatching = GetNumMatchingIngredientsToItemPrereqs(item, ingredients);
+                int numMatching = GetNumMatchingIngredientsToItemPrereqs(result, ingredients);
 
-                if (numMatching == item.Prerequisites.Count)
+                if (numMatching == result.Prerequisites.Count)
                 {
                     //if we have -more- ingredients than prerequisites, count it as a partial craft
                     //(so we can display the partial-craft VFX and player might guess they need to remove an item)
                     //TODO: think about this! Should this case count as a partial craft or not? It would confuse players
                     //if they think a partial craft always has -fewer- ingredients than required
-                    if (ingredients.Count > item.Prerequisites.Count)
+                    if (ingredients.Count > result.Prerequisites.Count)
                     {
                         currentResultState = CraftingResultState.PartialIngredientMatch;
                     }
@@ -282,6 +295,18 @@ namespace Crafting
             if(crafterBoard)
             {
                 crafterBoard.MoveItemToGrid(item, stackSameItems);
+            }
+        }
+
+        public void MoveItemsToGrid(ICollection<CraftingItem> items, bool stackSameItems = true)
+        {
+            Debug.Assert(crafterBoard);
+            if(crafterBoard)
+            {
+                foreach(var item in items)
+                {
+                    crafterBoard.MoveItemToGrid(item, stackSameItems);
+                }
             }
         }
 

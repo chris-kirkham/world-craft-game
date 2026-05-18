@@ -3,10 +3,11 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 using DG.Tweening;
+using FMODUnity;
 using Crafting;
 
 [System.Serializable]
-public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
+public class CraftingItem : DraggablePhysicsObject
 {
     /// <summary>
     /// Animatable = crafting OFF, input OFF, kinematic rb, collision OFF
@@ -23,12 +24,6 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
     [Header("Item data")]
     [SerializeField] private CraftingItemData itemData;
 
-    [Header("Physics/movement")]
-    [SerializeField] private Rigidbody rb;
-    [SerializeField] private Collider coll;
-    [SerializeField] private DraggablePhysicsObject dragHandler;
-    [SerializeField] private Vector3 stackingOffset;
-
     [Header("Art")]
     [SerializeField] private RectTransform canvasRect;
     [SerializeField] private Renderer image;
@@ -42,6 +37,10 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
     [SerializeField] private GameObject onCraftedVFX;
     [SerializeField] private GameObject craftingPotentialVFX;
 
+    [Header("SFX")]
+    [SerializeField] private EventReference onGrabSFX;
+    [SerializeField] private EventReference onDropSFX;
+
     private Material imageMat;
     private GameObject mirroredArtInstance;
     private bool acceptInput = true;
@@ -49,7 +48,6 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
     private bool isTouchingOtherItems;
     private Cursor cursor;
     private State state;
-    private Sequence tweenSequence;
 
     public CraftingItemData Data
     {
@@ -60,16 +58,13 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
             UpdateData();
         }
     }
-
-    //IStackable
-    public bool CanStack => false;
-    public Vector3 StackingOffset => stackingOffset;
-    public Stacker CurrentStacker { get; set; }
-
+    
     public event Action OnUsedInSuccessfulCraft;
 
-    private void OnEnable()
+    protected override void OnEnable()
     {
+        base.OnEnable();
+
         if (CraftingManager.InstExists())
         {
             CraftingManager.Inst.RegisterCraftingItem(this);
@@ -92,16 +87,12 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
         {
             craftingPotentialVFX.SetActive(false);
         }
-
-        if (dragHandler)
-        {
-            dragHandler.DragStarted.AddListener(OnDragStart);
-            dragHandler.DragEnded.AddListener(OnDragEnd);
-        }
     }
 
-    private void OnDisable()
+    protected override void OnDisable()
     {
+        base.OnDisable();
+
         if (cursor)
         {
             cursor.RemoveCursorEventListener(this);
@@ -112,18 +103,7 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
             CraftingManager.Inst.OnItemDisabledOrDestroyed(this);
         }
 
-        if (dragHandler)
-        {
-            dragHandler.DragStarted.RemoveListener(OnDragStart);
-            dragHandler.DragEnded.RemoveListener(OnDragEnd);
-        }
-
         RemoveAllItemContacts();
-
-        if (tweenSequence != null)
-        {
-            //tweenSequence.Kill();
-        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -260,48 +240,17 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
         }
     }
 
-    public void TryStartDrag()
-    {
-        dragHandler.TryStartDrag();
-    }
-
-    private void OnDragStart()
+    protected override void OnStartDrag()
     {
         SetCollisionEnabled(false);
         SetPartialCraftVFX(false);
+        FMODX.PlayOneShotAttached(onGrabSFX, gameObject);
     }
 
-    private void OnDragEnd()
+    protected override void OnEndDrag()
     {
         SetCollisionEnabled(true);
-
-        //check for stacking!!
-        if (CanStack && cursor)
-        {
-            //TODO: PROTOTYPE
-            var hits = Physics.RaycastAll(transform.position, Vector3.down);
-            var minDist = Mathf.Infinity;
-            IStackable bestHit = null;
-            foreach (var hit in hits)
-            {
-                var stackable = hit.transform.GetComponentInParent<IStackable>();
-                if (stackable == null || stackable == (IStackable)this)
-                {
-                    continue;
-                }
-
-                if (hit.distance < minDist)
-                {
-                    minDist = hit.distance;
-                    bestHit = stackable;
-                }
-            }
-
-            if (bestHit != null)
-            {
-                Stacker.Stack(bestHit, this);
-            }
-        }
+        FMODX.PlayOneShotAttached(onDropSFX, gameObject);
     }
 
     //called when this item is first crafted
@@ -326,6 +275,10 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
         }
         else if (resultState == CraftingManager.CraftingResultState.PartialIngredientMatch)
         {
+            //TODO: prototype partial craft VFX
+            var seq = DOTween.Sequence(transform)
+                .Append(transform.DOShakePosition(0.5f, 0.1f, 10, 90, false, true, ShakeRandomnessMode.Full));
+                //.Join(transform.DOShakeRotation(0.5f));
             SetPartialCraftVFX(true);
         }
         else
@@ -389,48 +342,16 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
         //rb.isKinematic = !enabled;
         rb.isKinematic = true;
         SetCollisionEnabled(enabled);
-        dragHandler.ReEnablePhysicsOnEndDrag = enabled; //hack
     }
 
     private void SetAcceptInput(bool acceptInput)
     {
         this.acceptInput = acceptInput;
-        dragHandler.SetDragEnabled(acceptInput);
+        SetDragEnabled(acceptInput);
 
         if (!acceptInput)
         {
             RemoveAllItemContacts();
-        }
-    }
-
-    public IEnumerator AnimateToRoutine(Vector3 position_WS, Quaternion rotation_WS, Vector3 localScale, float time, bool returnToPrevStateOnEndAnim = true)
-    {
-        var prevState = state;
-        SetState(State.Animatable);
-
-        if (time <= 0f)
-        {
-            transform.position = position_WS;
-            transform.rotation = rotation_WS;
-        }
-        else
-        {
-            if (tweenSequence != null && tweenSequence.active)
-            {
-                yield return tweenSequence.WaitForCompletion();
-            }
-
-            tweenSequence = DOTween.Sequence(transform);
-            tweenSequence.Append(transform.DOMove(position_WS, time));
-            tweenSequence.Join(transform.DORotate(rotation_WS.eulerAngles, time));
-            tweenSequence.Join(transform.DOScale(localScale, time));
-
-            yield return tweenSequence.WaitForCompletion();
-        }
-
-        if (returnToPrevStateOnEndAnim)
-        {
-            SetState(prevState);
         }
     }
 
@@ -450,31 +371,5 @@ public class CraftingItem : MonoBehaviour, ICursorEventListener, IStackable
                 nameTextFade.FadeOut();
             }
         }
-    }
-
-    public void OnCursorEvent(Cursor.EventID e)
-    {
-        if (e == Cursor.EventID.RightClickDown)
-        {
-            //inspect item while holding right-click
-            if (cursor.CurrentDragTarget == dragHandler)
-            {
-                SetOnInspectVFX(true);
-            }
-        }
-        else if (e == Cursor.EventID.RightClickUp)
-        {
-            SetOnInspectVFX(false);
-        }
-    }
-
-    public void OnAddedToStack()
-    {
-        throw new NotImplementedException();
-    }
-
-    public void OnRemovedFromStack()
-    {
-        throw new NotImplementedException();
     }
 }

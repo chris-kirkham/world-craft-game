@@ -47,6 +47,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b3cdd026d8fa03428ae311b2c3bbef1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  returnable: 0
   zonePivot: {fileID: 3091840409506394546}
   zoneSize: {x: 1.42, y: 1.75}
   animateItemToPlacementPointTime: 0.3

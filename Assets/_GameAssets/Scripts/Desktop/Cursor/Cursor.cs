@@ -79,7 +79,6 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
     private bool inputEnabled = true;
     private bool isPositionFrozen;
     private bool[] mouseButtonsPressed = new bool[3]; //0 = left, 1 = right, 2 = middle
-    //private bool[] mouseButtonsPressedLastTick = new bool[3]; //0 = left, 1 = right, 2 = middle
 
     private HashSet<ICursorEventListener> trackedListeners = new HashSet<ICursorEventListener>(); //event listeners
     //listeners flagged to add/remove at the end of a frame
@@ -88,8 +87,8 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
     private HashSet<ICursorEventListener> listenersToRemove = new HashSet<ICursorEventListener>(); 
     private List<ICursorEventListener> hoveredListeners = new List<ICursorEventListener>(); //event listeners the cursor is currently on top of
     private List<SpriteOverride> spriteOverrides = new List<SpriteOverride>();
-    private HashSet<DraggableObject> dragRequests = new HashSet<DraggableObject>();
 
+    private DraggablesManager draggablesManager;
 
     public Vector2 RawPosition => rawMousePosition;
     public Vector2 RawPositionDelta => rawMousePosition - prevRawMousePosition;
@@ -104,10 +103,11 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
 
     public Camera Cam => cam;
 
-    public DraggableObject CurrentDragTarget { get; set; }
+    public DraggableObject CurrentDragTarget => draggablesManager.CurrentDragTarget;
 
     private void OnEnable()
     {
+        draggablesManager = new DraggablesManager(this);
         eventSystem = FindFirstObjectByType<EventSystem>();
         UnityEngine.Cursor.visible = false; //hide default cursor (TODO: look at using Cursor.SetCursor instead?)
     }
@@ -125,11 +125,11 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
         AddFlaggedCursorEventListeners();
         RemoveFlaggedCursorEventListeners();
         SendEvents();
-        UpdateDragTarget(); //N.B. update drag target at end of frame to allow other scripts to use current drag target before then
+        draggablesManager.UpdateDragTarget();
 
         if (debugDisplay)
         {
-            debugDisplay.SetCursorDebugInfo(this, dragRequests);
+            //debugDisplay.SetCursorDebugInfo(this, draggablesManager.DragRequests);
         }
     }
 
@@ -374,60 +374,16 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
         }
     }
 
-    public void AddToDragRequests(DraggableObject draggable)
+    public void RequestDrag(DraggableObject draggable)
     {
-        dragRequests.Add(draggable);
+        draggablesManager.RequestDrag(draggable);
     }
 
-    public void RemoveFromDragRequests(DraggableObject draggable)
+    public void RemoveDragRequest(DraggableObject draggable)
     {
-        dragRequests.Remove(draggable);
+        draggablesManager.EndDrag(draggable);
     }
 
-    private void UpdateDragTarget()
-    {
-        if(CurrentDragTarget)
-        {
-            //if we're already dragging something in the drag list, keep dragging that
-            if (dragRequests.Contains(CurrentDragTarget)) 
-            {
-                return;
-            }
-            else //if current drag target was removed from the drag list, end that drag
-            {
-                CurrentDragTarget = null;
-            }
-        }
-
-        if(dragRequests.Count == 0)
-        {
-            return;
-        }
-
-        //find best drag option by y distance to camera - TODO: think of a smarter way to do this
-        DraggableObject closestDraggable = null;
-        var minDist = Mathf.Infinity;
-        foreach(var draggable in dragRequests)
-        {
-            if(!draggable)
-            {
-                continue;
-            }
-
-            var dist = Mathf.Abs(draggable.transform.position.y - cam.transform.position.y);
-            if(dist < minDist)
-            {
-                closestDraggable = draggable;
-                minDist = dist;
-            }
-        }
-
-        if(closestDraggable)
-        {
-            CurrentDragTarget = closestDraggable;
-            CurrentDragTarget.StartDrag();
-        }
-    }
     private void OnDrawGizmos()
     {
 #if UNITY_EDITOR

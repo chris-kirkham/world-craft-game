@@ -11,13 +11,9 @@ public class ItemInspectSequence
     public IEnumerator InspectItem(CraftingItem item)
     {
         item.SetState(CraftingItem.State.Animatable);
-        
+
         var cam = Cursor.Inst.Cam;
-        item.transform.localScale = Vector3.zero; //make item scale up as it animates in
-        yield return item.transform.DOScale(1f, 0.5f).WaitForCompletion();
-        yield return new WaitForSeconds(0.5f);
-        
-        item.SetState(CraftingItem.State.Animatable);
+        item.transform.localScale = Vector3.zero;
         yield return Tweening.DoTransform(
             item.transform,
             cam.transform.position + (cam.transform.forward * 2f),

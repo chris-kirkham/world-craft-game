@@ -265,7 +265,10 @@ namespace Crafting
         {
             base.OnDraggableEnterPlacementArea(obj);
 
-            SetPlacementPreviewVFXEnabled(true);
+            if(CanPlace(obj))
+            {
+                SetPlacementPreviewVFXEnabled(true);
+            }
         }
 
         private void SetPlacementPreviewVFXEnabled(bool enabled)

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemName: Storm
   craftingAliases: []
-  thumbnailTex: {fileID: 0}
+  thumbnailTex: {fileID: 2800000, guid: 85d511159c068d1429b5b8ab75078553, type: 3}
   contentPrefab: {fileID: 0}
   prerequisites:
   - {fileID: 11400000, guid: f8474ae3f57d22d4188455e2c6cd2712, type: 2}

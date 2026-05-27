@@ -10,7 +10,7 @@ public class CraftingDevWindow : EditorWindow
 {
     private List<CraftingItemDatabase> itemDatabases = new List<CraftingItemDatabase>();
 
-    private VisualElement searchResultsRoot;
+    private ScrollView searchResultsRoot;
     private VisualElement possibleCraftsRoot;
 
     [MenuItem("Window/Crafting/Crafting Helper")]
@@ -36,10 +36,10 @@ public class CraftingDevWindow : EditorWindow
         showPossibleCraftsButton.Add(new Label("Show possible crafts"));
         rootVisualElement.Add(showPossibleCraftsButton);
 
-        searchResultsRoot = new VisualElement();
+        searchResultsRoot = new ScrollView();
         rootVisualElement.Add(searchResultsRoot);
 
-        possibleCraftsRoot = new VisualElement();
+        possibleCraftsRoot = new ScrollView();
         rootVisualElement.Add(possibleCraftsRoot);
 
     }

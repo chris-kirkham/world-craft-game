@@ -64,6 +64,12 @@ namespace Crafting
             {
                 foreach (var extraProduct in item.ExtraProducts)
                 {
+                    if(GameplaySettings.InfiniteDecks && craftingManager.WasItemCraftedPreviously(extraProduct))
+                    {
+                        //if we're using infinite decks, don't spawn extra product if it's already on the board
+                        continue;
+                    }
+
                     yield return new WaitForSeconds(multiItemSpawnDelay);
                     yield return SpawnItemToGridRoutine(extraProduct, SpawnPos, Quaternion.identity);
                     Debug.Log($"Spawned extra product {extraProduct.ItemName} from craft result {item.ItemName}!");

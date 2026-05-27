@@ -44,7 +44,7 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
         RightClickDown = 1 << 5,
         RightClickUp = 1 << 6,
         MiddleClickDown = 1 << 7,
-        MiddleClickUp = 1 << 8, 
+        MiddleClickUp = 1 << 8,
         MAX = 1 << 9
     }
 
@@ -129,7 +129,7 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
 
         if (debugDisplay)
         {
-            //debugDisplay.SetCursorDebugInfo(this, draggablesManager.DragRequests);
+            debugDisplay.SetCursorDebugInfo(this, draggablesManager.DragRequests);
         }
     }
 

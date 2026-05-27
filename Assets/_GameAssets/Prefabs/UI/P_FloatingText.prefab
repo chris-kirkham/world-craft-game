@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1007614292472402940}
   - component: {fileID: 2332552631947658464}
   - component: {fileID: 5309277957613198270}
+  - component: {fileID: 4618933795587018842}
   m_Layer: 0
   m_Name: P_FloatingText
   m_TagString: Untagged
@@ -156,7 +157,6 @@ MonoBehaviour:
   rotationFloatSpeed: 0
   useLocalPosition: 0
   useLocalRotation: 0
-  useParentTransformAsPivot: 0
   pivotTransform: {fileID: 0}
   rampUpOnEnable: 1
   rampTime: 0.5
@@ -227,3 +227,17 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   text: {fileID: 1007614292472402940}
+--- !u!114 &4618933795587018842
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8441693127499205813}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9feaead604204a547b1a98e301934513, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  tmpText: {fileID: 1007614292472402940}
+  typewriterTimePerChar: 0.1

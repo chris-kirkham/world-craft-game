@@ -1,3 +1,6 @@
+using DG.Tweening;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -14,7 +17,6 @@ namespace Crafting
         [SerializeField] private float itemZOffset = 0.05f;
         [SerializeField] private bool populateOnEnable;
         [SerializeField] private bool singleItemType = true;
-        [SerializeField] private bool infinite = true;
         [SerializeField] private float animateItemToDeckTime = 0.4f;
         [Header("VFX")]
         [SerializeField] private FadeInOut onHoverPreviewVFX;
@@ -22,6 +24,9 @@ namespace Crafting
         private LinkedList<CraftingItem> deck = new LinkedList<CraftingItem>();
 
         private Cursor cursor;
+
+        public event Action<CraftingItem> OnItemPlaced;
+        public event Action<CraftingItem> OnItemRemoved;
 
         private void Start()
         {
@@ -49,47 +54,6 @@ namespace Crafting
             }
         }
 
-        private void Update()
-        {
-            //if player has started dragging the top item, remove it from the deck
-            //TODO: this is jank
-            CheckForTopItemRemoved();
-        }
-
-        private void CheckForTopItemRemoved()
-        {
-            if (IsEmpty())
-            {
-                return;
-            }
-
-            if (!deck.Last.Value) //top deck item is null
-            {
-                RemoveTopItem();
-                return;
-            }
-
-            var cursor = Cursor.Inst;
-            if (!cursor || !cursor.CurrentDragTarget)
-            {
-                return;
-            }
-
-            if (cursor.CurrentDragTarget == deck.Last.Value)
-            {
-                var itemData = deck.Last.Value.Data;
-                RemoveTopItem();
-
-                //TODO: prototype - infinite deck - spawn new item to replace grabbed one
-                if (infinite && deck.Count < 1)
-                {
-                    var newItem = CraftingManager.Inst.SpawnItem(
-                        itemData, Vector3.zero, Quaternion.identity, doItemOnCraftedCallback: false);
-                    AddItemToTopDeck(newItem, animateToDeck: false);
-                }
-            }
-        }
-
         public CraftingItem PeekTopItem()
         {
             return deck.Count > 0 ? deck.Last.Value : null;
@@ -100,26 +64,6 @@ namespace Crafting
             return deck.Count == 0;
         }
 
-        private void AddItemToTopDeck(CraftingItem item, bool animateToDeck = true)
-        {
-            if(singleItemType && !IsEmpty() && item.Data != deck.Last.Value.Data)
-            {
-                Debug.LogError("Added a different item type to a single-item deck! This should be dealt with earlier in code.");
-            }
-
-            OnItemAdded(item);
-            deck.AddLast(item);
-
-            if(animateToDeck)
-            {
-                TweenItemToDeck(item, GetTopDeckPos());
-            }
-            else
-            {
-                item.transform.position = GetTopDeckPos();
-            }
-        }
-
         private Vector3 GetTopDeckPos()
         {
             return transform.position
@@ -127,42 +71,34 @@ namespace Crafting
                 + (deck.Count * itemZOffset * Vector3.forward);
         }
 
-        public void AddItemToBottomDeck(CraftingItem item)
+        private Vector3 GetBottomDeckPos()
         {
-            Debug.Log($"Adding item {item.gameObject.name} to bottom of deck!");
-            var itemUpInc = Vector3.up * itemHeight;
-            foreach (var deckItem in deck)
-            {
-                deckItem.transform.position += itemUpInc;
-                deckItem.transform.position += Vector3.forward * itemZOffset;
-            }
-
-            OnItemAdded(item);
-            deck.AddFirst(item);
-            TweenItemToDeck(item, transform.position);
+            return transform.position;
         }
 
-        private void OnItemAdded(CraftingItem item)
+        private IEnumerator TweenItemToDeck(CraftingItem item)
         {
-            if (item)
+            //for infinite decks, items tweening to the deck should look like they're merging/being absorbed into the deck,
+            //as infinite decks should only ever contain one item which represents that item type
+            //TODO: WE NEED TO ACTUALLY NOT ADD MORE ITEMS TO INFINITE DECKS, THIS IS JUST A VFX HACK
+            if(GameplaySettings.InfiniteDecks && deck.Count > 1)
             {
-                item.transform.parent = transform;
-                item.SetState(CraftingItem.State.Animatable);
-            }
-        }
+                //TODO: scaling cards to 0 and not scaling them back when dragging makes them invisible LOL
+                //Fix infinite decks properly!
+                yield return Tweening.DoTransform(
+                    item.transform, GetBottomDeckPos(), transform.rotation, Vector3.zero, animateItemToDeckTime).WaitForCompletion();
 
-        private void OnItemRemoved(CraftingItem item)
-        {
-            if (item)
+                var topItem = deck.Last.Value;
+                if (TryRemovePlacedObj(topItem))
+                {
+                    Destroy(topItem.gameObject);
+                }
+            }
+            else //non-infinite decks should visually stack items
             {
-                item.transform.parent = null;
-                item.SetState(CraftingItem.State.Active);
+                yield return Tweening.DoTransform(
+                    item.transform, GetTopDeckPos(), transform.rotation, animateItemToDeckTime).WaitForCompletion();
             }
-        }
-
-        private void TweenItemToDeck(CraftingItem item, Vector3 targetPos)
-        {
-            Tweening.DoTransform(item.transform, targetPos, transform.rotation, animateItemToDeckTime);
         }
 
         private void PopulateDeck(CraftingItemDatabase deckItems)
@@ -178,8 +114,10 @@ namespace Crafting
             {
                 var itemData = deckItems.ItemList[i];
                 var item = CraftingManager.Inst.SpawnItem(itemData, transform.position, Quaternion.identity);
-                item.transform.parent = transform;
-                AddItemToTopDeck(item);
+                if(!TryPlaceObject(item))
+                {
+                    Debug.LogError($"Unable to place item when populating deck for some reason!");
+                }
             }
         }
 
@@ -204,7 +142,7 @@ namespace Crafting
             if (item)
             {
                 item.SetState(CraftingItem.State.Draggable);
-                item.TryStartDrag();
+                item.RequestDrag();
             }
         }
 
@@ -216,8 +154,28 @@ namespace Crafting
             }
 
             var item = deck.Last.Value;
-            OnItemRemoved(item);
             deck.RemoveLast();
+
+            if (!item)
+            {
+                Debug.LogError($"Removed a null item from the deck! Why did the deck contain a null item?");
+                return;
+            }
+
+            var itemData = item.Data;
+            item.transform.parent = null;
+            item.SetState(CraftingItem.State.Active);
+
+            //TODO: prototype - infinite deck - spawn new item to replace removed one
+            if (GameplaySettings.InfiniteDecks && deck.Count < 1)
+            {
+                var newItem = CraftingManager.Inst.SpawnItem(
+                    itemData, GetTopDeckPos(), Quaternion.identity, doItemOnCraftedCallback: false);
+                if(!TryPlaceObject(newItem))
+                {
+                    Debug.LogError("Unable to replace item in deck for some reason!");
+                }
+            }
         }
 
         protected override bool CanPlace(DraggableObject obj)
@@ -250,13 +208,71 @@ namespace Crafting
             }
         }
 
+        private void AddItemToTopDeck(CraftingItem item, bool animateToDeck = true)
+        {
+            if(!item)
+            {
+                Debug.LogError($"Tried to add null item to deck!");
+                return;
+            }
+
+            if (singleItemType && !IsEmpty() && item.Data != deck.Last.Value.Data)
+            {
+                Debug.LogError("Added a different item type to a single-item deck! This should be dealt with earlier in code.");
+            }
+
+            if(GameplaySettings.InfiniteDecks && !IsEmpty())
+            {
+                //TODO: for infinite decks, still tween item to the deck but make it look like it's merging with the first item or something
+                //infinite decks should basically look like one card which represents that item type - cards should be able to be placed/returned
+                //to the deck but it shouldn't stack as if there are multiple (but finite) cards
+                //maybe make cards added to infinite decks scale down to zero as they move to the deck?
+            }
+
+            item.transform.parent = transform;
+            item.SetState(CraftingItem.State.Animatable);
+
+            deck.AddLast(item);
+
+            if (animateToDeck)
+            {
+                StartCoroutine(TweenItemToDeck(item));
+            }
+            else
+            {
+                item.transform.position = GetTopDeckPos();
+            }
+        }
+
+        protected override bool CanRemovePlacedObj(DraggableObject obj)
+        {
+            return !IsEmpty() && PeekTopItem() == obj;
+        }
+
+        protected override void OnPlacedObjRemoved(DraggableObject obj)
+        {
+            if(PeekTopItem() == obj)
+            {
+                RemoveTopItem();
+            }
+            else
+            {
+                Debug.LogError($"Object {obj} removed from deck, but it isn't the top item in this deck! This shouldn't happen.");
+            }
+        }
+
         protected override void OnDraggableEnterPlacementArea(DraggableObject obj)
         {
             base.OnDraggableEnterPlacementArea(obj);
 
+            SetPlacementPreviewVFXEnabled(true);
+        }
+
+        private void SetPlacementPreviewVFXEnabled(bool enabled)
+        {
             if (cursor && onHoverPreviewVFX)
             {
-                onHoverPreviewVFX.gameObject.SetActive(true);
+                onHoverPreviewVFX.gameObject.SetActive(enabled);
             }
         }
 
@@ -264,16 +280,19 @@ namespace Crafting
         {
             base.OnDraggableExitPlacementArea(obj);
 
-            if (cursor && onHoverPreviewVFX)
-            {
-                onHoverPreviewVFX.gameObject.SetActive(false);
-            }
+            SetPlacementPreviewVFXEnabled(false);
         }
 
         //ICursorEventListener
         public override void OnCursorEvent(Cursor.EventID e)
         {
             base.OnCursorEvent(e);
+
+            //slightly jank but w/e
+            if(!Cursor.Inst.CurrentDragTarget)
+            {
+                SetPlacementPreviewVFXEnabled(false);
+            }
 
             if (e == Cursor.EventID.LeftClickDown)
             {

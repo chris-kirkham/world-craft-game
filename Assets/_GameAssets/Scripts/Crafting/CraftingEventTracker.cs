@@ -8,6 +8,7 @@ public class CraftingEventTracker
     private List<CraftingItemData> uniqueItemsCraftedInCraftOrder;
 
     public event Action<CraftingItemData> itemFirstCrafted;
+    public event Action<CraftingItemData> onItemCrafted;
 
     public CraftingEventTracker()
     {
@@ -23,6 +24,8 @@ public class CraftingEventTracker
             uniqueItemsCraftedInCraftOrder.Add(itemData);
             itemFirstCrafted?.Invoke(itemData);
         }
+
+        onItemCrafted?.Invoke(itemData);
     }
 
     public List<CraftingItemData> GetUniqueItemsCrafted()

@@ -144,17 +144,8 @@ public class CrafterPlacementZone : DraggablePlacementPoint, ICursorEventListene
             return;
         }
 
-        if(Cursor.Inst.IsHovered(this))
-        {
-            SetState(State.PlacementPreview);
-        }
-        else
-        {
-            SetState(State.Empty);
-        }
-
         currentItem.SetState(CraftingItem.State.Active);
-        currentItem.TryStartDrag();
+        currentItem.RequestDrag();
     }
 
     private void StartPlacementPreview()
@@ -173,6 +164,23 @@ public class CrafterPlacementZone : DraggablePlacementPoint, ICursorEventListene
     protected override void PlaceObject(DraggableObject obj)
     {
         SetState(State.ItemPlaced);
+    }
+
+    protected override bool CanRemovePlacedObj(DraggableObject obj)
+    {
+        return state == State.ItemPlaced && currentItem == obj;
+    }
+
+    protected override void OnPlacedObjRemoved(DraggableObject obj)
+    {
+        if(currentItem && currentItem == obj)
+        {
+            SetState(State.Empty);
+        }
+        else
+        {
+            Debug.LogError($"Removed {obj} from {nameof(CrafterPlacementZone)}, but it wasn't this zone's current item! This shouldn't happen!");
+        }
     }
 
     protected override void OnDraggableEnterPlacementArea(DraggableObject obj)

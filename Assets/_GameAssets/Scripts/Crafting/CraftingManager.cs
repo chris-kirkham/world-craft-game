@@ -1,11 +1,6 @@
-using DG.Tweening;
-using NUnit.Framework.Interfaces;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Playables;
-using UnityEngine.Serialization;
 
 namespace Crafting
 {
@@ -34,7 +29,7 @@ namespace Crafting
         [SerializeField] private DebugDisplay debugDisplay;
 
         //TODO: move this to a more generic ItemManager if keeping functionality
-        private HashSet<CraftingItem> activeItems = new HashSet<CraftingItem>(); //list of all active crafting items currently on the board
+        private HashSet<CraftingItem> activeItems = new HashSet<CraftingItem>(); //all enabled crafting items
         public HashSet<CraftingItem> ActiveItems => activeItems;
 
         //cached lists of stuff
@@ -106,7 +101,7 @@ namespace Crafting
 
         private void OnItemPlacedOrRemoved()
         {
-            var placedItems = new List<CraftingItem>();
+            var placedItems = new List<CraftingItem>(); //TODO: allocation
             foreach (var placementPoint in crafterBoard.PlacementPoints)
             {
                 if (placementPoint.CurrentItem)
@@ -171,6 +166,12 @@ namespace Crafting
             }
             else
             {
+                foreach(var ingredient in ingredients)
+                {
+                    ingredient.OnCraftAttempt(CraftingResultState.None);
+                }
+
+                //TODO: Fix placement points not removing items correctly when they're moved to grid from here
                 MoveItemsToGrid(ingredients);
             }
 
@@ -334,6 +335,49 @@ namespace Crafting
             }
 
             return anyPossibleCraft;
+        }
+
+        public List<CraftingItemData> FindPossibleCrafts(bool includeAlreadyCraftedItems = true)
+        {
+            var possibleCrafts = new List<CraftingItemData>();
+            foreach(var itemData in itemDatabase.ItemList)
+            {
+                if(itemData.Prerequisites.Count == 0)
+                {
+                    continue;
+                }
+
+                if(!includeAlreadyCraftedItems && crafterBoard.ActiveItemCounts.ContainsKey(itemData))
+                {
+                    continue;
+                }
+
+                var craftPossible = true;
+                foreach (var prereq in itemData.Prerequisites)
+                {
+                    if(!crafterBoard.ActiveItemCounts.ContainsKey(prereq))
+                    {
+                        craftPossible = false;
+                        break;
+                    }
+                    else if(!GameplaySettings.InfiniteDecks) //do we have enough of each ingredient to craft?
+                    {
+                        var prereqCounts = itemData.GetPrereqCounts();
+                        if(crafterBoard.ActiveItemCounts[prereq] < prereqCounts[prereq])
+                        {
+                            craftPossible = false;
+                            break;
+                        }
+                    }
+                }
+
+                if(craftPossible)
+                {
+                    possibleCrafts.Add(itemData);
+                }
+            }
+
+            return possibleCrafts;
         }
 
         private IEnumerator SpawnHelperItem()

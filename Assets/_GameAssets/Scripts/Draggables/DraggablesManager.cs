@@ -3,9 +3,11 @@ using UnityEngine;
 
 public class DraggablesManager
 {
-    private HashSet<DraggableObject> DragRequests = new HashSet<DraggableObject>();
+    private HashSet<DraggableObject> dragRequests = new HashSet<DraggableObject>();
 
     public DraggableObject CurrentDragTarget { get; set; }
+
+    public HashSet<DraggableObject> DragRequests => dragRequests;
 
     private Cursor cursor;
 
@@ -17,12 +19,12 @@ public class DraggablesManager
 
     public void RequestDrag(DraggableObject draggable)
     {
-        DragRequests.Add(draggable);
+        dragRequests.Add(draggable);
     }
 
     public void EndDrag(DraggableObject draggable)
     {
-        DragRequests.Remove(draggable);
+        dragRequests.Remove(draggable);
     }
 
     public void UpdateDragTarget()
@@ -30,17 +32,17 @@ public class DraggablesManager
         if (CurrentDragTarget)
         {
             //if we're already dragging something in the drag list, keep dragging that
-            if (DragRequests.Contains(CurrentDragTarget))
+            if (dragRequests.Contains(CurrentDragTarget))
             {
                 return;
             }
-            else //if current drag target was removed from the drag list, end that drag
+            else //if current drag target was removed from the drag list, end that drag (TODO: hmm)
             {
                 CurrentDragTarget = null;
             }
         }
 
-        if (DragRequests.Count == 0)
+        if (dragRequests.Count == 0)
         {
             return;
         }
@@ -48,8 +50,15 @@ public class DraggablesManager
         var bestDraggable = FindBestDragTarget();
         if (bestDraggable)
         {
-            CurrentDragTarget = bestDraggable;
-            CurrentDragTarget.StartDrag();
+            if(bestDraggable.TryStartDrag())
+            {
+                CurrentDragTarget = bestDraggable;
+            }
+            else
+            {
+                dragRequests.Remove(bestDraggable);
+                UpdateDragTarget(); //TODO: this will silently fail if there are no valid drag targets... potentially confusing
+            }
         }
     }
 
@@ -58,7 +67,7 @@ public class DraggablesManager
         //find best drag option by y distance to camera - TODO: think of a smarter way to do this
         DraggableObject bestDraggable = null;
         var minDist = Mathf.Infinity;
-        foreach (var draggable in DragRequests)
+        foreach (var draggable in dragRequests)
         {
             if (!draggable)
             {

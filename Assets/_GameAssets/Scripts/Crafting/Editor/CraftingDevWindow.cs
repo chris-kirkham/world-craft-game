@@ -1,14 +1,17 @@
+using Crafting;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UIElements;
 using UnityEditor;
 using UnityEditor.UIElements;
+using UnityEngine;
+using UnityEngine.UIElements;
+using static Codice.Client.Commands.WkTree.WorkspaceTreeNode;
 
 public class CraftingDevWindow : EditorWindow
 {
     private List<CraftingItemDatabase> itemDatabases = new List<CraftingItemDatabase>();
 
     private VisualElement searchResultsRoot;
+    private VisualElement possibleCraftsRoot;
 
     [MenuItem("Window/Crafting/Crafting Helper")]
     public static void CreateWindow()
@@ -28,8 +31,17 @@ public class CraftingDevWindow : EditorWindow
         searchBox.RegisterValueChangedCallback(evt => DoItemSearch(evt.newValue));
         rootVisualElement.Add(searchBox);
 
+        var showPossibleCraftsButton = new Button();
+        showPossibleCraftsButton.clicked += ShowPossibleCrafts;
+        showPossibleCraftsButton.Add(new Label("Show possible crafts"));
+        rootVisualElement.Add(showPossibleCraftsButton);
+
         searchResultsRoot = new VisualElement();
         rootVisualElement.Add(searchResultsRoot);
+
+        possibleCraftsRoot = new VisualElement();
+        rootVisualElement.Add(possibleCraftsRoot);
+
     }
 
     private void DoItemSearch(string searchString)
@@ -100,6 +112,26 @@ public class CraftingDevWindow : EditorWindow
         }
     }
 
+    private void ShowPossibleCrafts()
+    {
+        possibleCraftsRoot.Clear();
+
+        if (CraftingManager.InstExists())
+        {
+            var possibleCrafts = CraftingManager.Inst.FindPossibleCrafts(includeAlreadyCraftedItems: !GameplaySettings.InfiniteDecks); 
+            foreach(var itemData in possibleCrafts)
+            {
+                var assetLink = new ObjectField();
+                assetLink.SetValueWithoutNotify(itemData);
+                possibleCraftsRoot.Add(assetLink);
+            }
+        }
+        else
+        {
+            possibleCraftsRoot.Add(new Label("Game must be in progress to display possible crafts!"));
+        }
+    }
+    
     private void FetchItemDatabases()
     {
         var itemDatabaseGUIDs = AssetDatabase.FindAssets($"t:{nameof(CraftingItemDatabase)}");

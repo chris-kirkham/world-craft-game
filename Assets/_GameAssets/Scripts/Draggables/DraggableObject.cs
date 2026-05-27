@@ -20,6 +20,7 @@ public abstract class DraggableObject : MonoBehaviour, ICursorEventListener
 
     private HashSet<DraggablePlacementPoint> hoveredPlacementPoints = new HashSet<DraggablePlacementPoint>();
     private DraggablePlacementPoint returnPoint;
+    private DraggablePlacementPoint placedPoint;
 
     protected virtual void OnEnable()
     {
@@ -52,7 +53,7 @@ public abstract class DraggableObject : MonoBehaviour, ICursorEventListener
 
     //"Try" because if multiple draggables want to start dragging on the same tick,
     //the cursor decides which is the best option (why does the cursor do this? maybe move it to a different class)
-    public void TryStartDrag()
+    public void RequestDrag()
     {
         if (dragEnabled && Cursor.InstExists())
         {
@@ -60,16 +61,23 @@ public abstract class DraggableObject : MonoBehaviour, ICursorEventListener
         }
     }
 
-    public void StartDrag()
+    public bool TryStartDrag()
     {
         if(isDragging) //skip if already dragging
         {
-            return;
+            return false;
+        }
+
+        if(placedPoint && !placedPoint.TryRemovePlacedObj(this))
+        {
+            return false;
         }
 
         isDragging = true;
         OnStartDrag();
         DragStarted?.Invoke();
+
+        return true;    
     }
 
     public void EndDrag()
@@ -87,14 +95,14 @@ public abstract class DraggableObject : MonoBehaviour, ICursorEventListener
         var placed = bestPlacementPoint && bestPlacementPoint.TryPlaceObject(this);
         if(!placed && requiresPlacementPoint)
         {
-            if(!TryReturn())
+            if (!TryReturn())
             {
                 Debug.Log($"Dropped draggable that requires a placement point," +
                         $" but none found and no return point set! What to do here?");
             }
         }
-        
-        AddHoveredPoint(null);
+
+        hoveredPlacementPoints.Clear(); //TODO: shouldn't be necessary if the hover events worked properly!!
         OnEndDrag();
         DragEnded?.Invoke();
     }
@@ -149,6 +157,29 @@ public abstract class DraggableObject : MonoBehaviour, ICursorEventListener
         return returnPoint && returnPoint.TryPlaceObject(this);
     }
 
+    public bool TryRemoveFromCurrentPlacementPoint()
+    {
+        if(!placedPoint)
+        {
+            return true; //hmm
+        }
+
+        return placedPoint.TryRemovePlacedObj(this);
+    }
+
+    public void OnPlacedAtPlacementPoint(DraggablePlacementPoint point)
+    {
+        placedPoint = point;
+    }
+
+    public void OnRemovedFromPlacementPoint(DraggablePlacementPoint point)
+    {
+        if(placedPoint == point)
+        {
+            placedPoint = null;
+        }
+    }
+
     private DraggablePlacementPoint GetBestAvailablePlacementPoint()
     {
         if(hoveredPlacementPoints == null || hoveredPlacementPoints.Count == 0)
@@ -194,7 +225,7 @@ public abstract class DraggableObject : MonoBehaviour, ICursorEventListener
             case Cursor.EventID.LeftClickDown:
                 if(Cursor.Inst.IsHovered(this))
                 {
-                    TryStartDrag();
+                    RequestDrag();
                 }
                 break;
             case Cursor.EventID.LeftClickUp:
@@ -202,6 +233,34 @@ public abstract class DraggableObject : MonoBehaviour, ICursorEventListener
                 break;
             default:
                 break;
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.matrix = Matrix4x4.identity;
+        if(placedPoint)
+        {
+            Gizmos.color = Color.white;
+            Gizmos.DrawLine(transform.position, placedPoint.transform.position);
+        }
+
+        if(returnPoint)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawLine(transform.position, returnPoint.transform.position);
+        }
+
+        if(hoveredPlacementPoints.Count > 0)
+        {
+            Gizmos.color = Color.yellow;
+            foreach(var point in hoveredPlacementPoints)
+            {
+                if(point)
+                {
+                    Gizmos.DrawLine(transform.position, point.transform.position);
+                }
+            }
         }
     }
 }

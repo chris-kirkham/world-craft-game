@@ -17,7 +17,11 @@ namespace Crafting
 
         private CraftingItemDeck[,] grid;
 
+        private Dictionary<CraftingItemData, int> activeItemCounts = new Dictionary<CraftingItemData, int>(); //{ itemData, number active on board }
+
         public List<CrafterPlacementZone> PlacementPoints => placementPoints;
+
+        public Dictionary<CraftingItemData, int> ActiveItemCounts => activeItemCounts;
 
         private void OnEnable()
         {
@@ -75,7 +79,7 @@ namespace Crafting
                     }
                     else if (stackSameItems && deck.PeekTopItem().Data == item.Data)
                     {
-                        deck.TryPlaceObject(item);
+                        PlaceItemInBoardDeck(item, deck);
                         return;
                     }
                 }
@@ -83,11 +87,23 @@ namespace Crafting
 
             if(firstEmpty.HasValue)
             {
-                grid[firstEmpty.Value.x, firstEmpty.Value.y].TryPlaceObject(item);
+                PlaceItemInBoardDeck(item, grid[firstEmpty.Value.x, firstEmpty.Value.y]);
             }
             else
             {
                 Debug.LogError($"No empty cell found in deck! What to do here???");
+            }
+        }
+
+        void PlaceItemInBoardDeck(CraftingItem item, CraftingItemDeck deck)
+        {
+            if (deck.TryPlaceObject(item))
+            {
+                AddToActiveItems(item);
+            }
+            else
+            {
+                Debug.LogError($"Tried to add item {item.Data} to grid, but it failed!");
             }
         }
 
@@ -113,6 +129,39 @@ namespace Crafting
                 Random.Range(minX + padding, maxX - padding),
                 centre.y,
                 Random.Range(minY + padding, maxY - padding));
+        }
+
+        private void AddToActiveItems(CraftingItem item)
+        {
+            var itemData = item.Data;
+            if(activeItemCounts.TryGetValue(itemData, out var count))
+            {
+                activeItemCounts[itemData] = count + 1;
+            }
+            else
+            {
+                activeItemCounts.Add(itemData, 1);
+            }
+        }
+
+        private void RemoveFromActiveItems(CraftingItem item)
+        {
+            var itemData = item.Data;
+            if (activeItemCounts.TryGetValue(itemData, out var count))
+            {
+                if(count == 1)
+                {
+                    activeItemCounts.Remove(itemData);
+                }
+                else
+                {
+                    activeItemCounts[itemData] = count - 1;
+                }
+            }
+            else
+            {
+                Debug.LogError("Tried to remove an item from the active items dictionary, but it wasn't in there!");
+            }
         }
 
         private void OnDrawGizmos()

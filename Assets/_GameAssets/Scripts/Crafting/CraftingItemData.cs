@@ -24,4 +24,27 @@ public class CraftingItemData : ScriptableObject
     {
         return itemName;
     }
+
+    //Get crafting prerequisites in the form {prerequisite, number required}
+    //TODO: inefficient to calculate each time - maybe this should be the format the crafting manager
+    //uses anyway, in which case it should be cached or the inspector changed so prerequisites can be defined
+    //in this format to begin with
+    public Dictionary<CraftingItemData, int> GetPrereqCounts()
+    {
+        var counts = new Dictionary<CraftingItemData, int>();
+        foreach(var prereq in prerequisites)
+        {
+            if(counts.TryGetValue(prereq, out var count))
+            {
+                counts[prereq] = count + 1;
+            }
+            else
+            {
+                counts.Add(prereq, 1);
+            }
+        }
+
+        return counts;
+    }
+    
 }

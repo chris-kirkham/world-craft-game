@@ -1,6 +1,7 @@
 using Crafting;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -11,6 +12,8 @@ public class CraftingItemCreationWindow : EditorWindow
     private ObjectField itemDatabaseField;
     private CraftingItemDatabase itemDatabase;
     private VisualElement graphRoot;
+    private Button checkForLoopsButton;
+    private ScrollView tierListScrollView;
 
     [MenuItem("Window/Crafting/Crafting Item Editor")]
     public static void CreateWindow()
@@ -29,6 +32,14 @@ public class CraftingItemCreationWindow : EditorWindow
             evt => OnItemDatabaseChanged((CraftingItemDatabase)evt.newValue));
         rootVisualElement.Add(itemDatabaseField);
 
+        checkForLoopsButton = new Button();
+        checkForLoopsButton.text = "Check for prerequisite loops";
+        checkForLoopsButton.clicked += () => CheckAllForPrerequisiteLoops((CraftingItemDatabase)itemDatabaseField.value);
+        rootVisualElement.Add(checkForLoopsButton);
+
+        tierListScrollView = new ScrollView();
+        rootVisualElement.Add(tierListScrollView);
+
         graphRoot = new VisualElement();
         rootVisualElement.Add(graphRoot);
     }
@@ -43,58 +54,31 @@ public class CraftingItemCreationWindow : EditorWindow
         itemDatabase = database;
 
         CreateGraph(itemDatabase);
-        foreach(var itemData in itemDatabase.ItemList)
+        var itemsSortedByTier = new List<CraftingItemData>(database.ItemList);
+        itemsSortedByTier.Sort((a, b) => a.Tier.CompareTo(b.Tier));
+        foreach(var itemData in itemsSortedByTier)
         {
             var node = CreateGraphNode(itemData);
-            rootVisualElement.Add(node);
+            tierListScrollView.Add(node);
         }
     }
 
     private VisualElement CreateGraph(CraftingItemDatabase itemDatabase)
     {
-        UpdateItemTiers(itemDatabase);
+        itemDatabase.UpdateItemTiers();
         return null;
     }
 
-    private void UpdateItemTiers(CraftingItemDatabase itemDatabase)
+    private void CheckAllForPrerequisiteLoops(CraftingItemDatabase itemDatabase)
     {
-        var uncheckedItems = new List<CraftingItemData>(itemDatabase.ItemList);
-        var checkedItems = new HashSet<CraftingItemData>();
-
-        int tier = 0;
-        //while(uncheckedItems.Count > 0)
+        if(!itemDatabase)
         {
-            for(int i = uncheckedItems.Count - 1; i >= 0; i--)
-            {
-                var itemData = uncheckedItems[i];
-                var allPrereqsInPrevTier = true;
-                if(itemData.Prerequisites.Count > 0)
-                {
-                    if(itemData.HasPrerequisiteLoop)
-                    {
-                        continue;
-                    }
+            return;
+        }
 
-                    foreach(var prereq in itemData.Prerequisites)
-                    {
-                        if(!checkedItems.Contains(prereq))
-                        {
-                            allPrereqsInPrevTier = false;
-                            break;
-                        }
-                    }
-                }
-
-                if(allPrereqsInPrevTier)
-                {
-                    itemData.Tier = tier;
-                    checkedItems.Add(itemData);
-                    uncheckedItems.RemoveAt(i);
-                    Debug.Log($"{itemData.name} is tier {tier}");
-                }
-            }
-
-            tier++;
+        foreach(var itemData in itemDatabase.ItemList)
+        {
+            itemData.CheckForPrerequisiteLoops();
         }
     }
 

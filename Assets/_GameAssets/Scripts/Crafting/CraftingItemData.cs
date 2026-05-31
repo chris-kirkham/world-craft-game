@@ -56,7 +56,7 @@ public class CraftingItemData : ScriptableObject
         return counts;
     }
 
-    private bool CheckForPrerequisiteLoops()
+    public bool CheckForPrerequisiteLoops()
     {
         var visited = new HashSet<CraftingItemData>(prerequisites.Count);
         var recursion = new HashSet<CraftingItemData>(prerequisites.Count);

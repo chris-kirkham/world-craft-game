@@ -13,10 +13,9 @@ MonoBehaviour:
   m_Name: CraftData_Radar
   m_EditorClassIdentifier: 
   itemName: Radar
-  thumbnail: {fileID: 0}
+  craftingAliases: []
   thumbnailTex: {fileID: 2800000, guid: b9749f7eaeab0494fa9269cde199a769, type: 3}
   contentPrefab: {fileID: 0}
   prerequisites:
   - {fileID: 11400000, guid: e331eac767456e942993938582ae9c3e, type: 2}
-  - {fileID: 11400000, guid: 3fdeca24dd1e5bc49bd666527fbf854a, type: 2}
   products: []

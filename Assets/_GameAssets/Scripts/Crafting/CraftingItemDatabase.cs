@@ -18,7 +18,7 @@ public class CraftingItemDatabase : ScriptableObject
         UpdateItemTiers();
     }
 
-    private void UpdateItemTiers()
+    public void UpdateItemTiers()
     {
         var uncheckedItems = new List<CraftingItemData>(ItemList);
         var checkedItems = new HashSet<CraftingItemData>();

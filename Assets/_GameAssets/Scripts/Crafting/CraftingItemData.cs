@@ -13,6 +13,10 @@ public class CraftingItemData : ScriptableObject
     [SerializeField] private List<CraftingItemData> prerequisites;
     [SerializeField] private List<CraftingItemData> products;
 
+    public int Tier { get; set; }
+
+    public bool HasPrerequisiteLoop { get; private set; }
+
     public string ItemName => itemName;
     public List<CraftingItemData> Aliases => craftingAliases;
     public Texture2D ThumbnailTex => thumbnailTex;
@@ -23,6 +27,11 @@ public class CraftingItemData : ScriptableObject
     public override string ToString()
     {
         return itemName;
+    }
+
+    private void OnValidate()
+    {
+        HasPrerequisiteLoop = CheckForPrerequisiteLoops();
     }
 
     //Get crafting prerequisites in the form {prerequisite, number required}
@@ -46,5 +55,44 @@ public class CraftingItemData : ScriptableObject
 
         return counts;
     }
-    
+
+    private bool CheckForPrerequisiteLoops()
+    {
+        var visited = new HashSet<CraftingItemData>(prerequisites.Count);
+        var recursion = new HashSet<CraftingItemData>(prerequisites.Count);
+
+        return NodeHasLoop(this);
+
+        bool NodeHasLoop(CraftingItemData itemData)
+        {
+            //node already visited - loop detected!
+            if (recursion.Contains(itemData))
+            {
+                Debug.LogError($"Prerequisite loop detected: {string.Join("->", recursion)}->{itemData}");
+                return true;
+            }
+
+            //node already visited and no loop found
+            if (visited.Contains(itemData))
+            {
+                return false;
+            }
+
+            //add this item to visited and recursion sets
+            visited.Add(itemData);
+            recursion.Add(itemData);
+
+            foreach (var prereq in itemData.Prerequisites)
+            {
+                if (NodeHasLoop(prereq))
+                {
+                    return true;
+                }
+            }
+
+            //remove this item from recursion stack if no loop found
+            recursion.Remove(itemData);
+            return false;
+        }
+    }
 }

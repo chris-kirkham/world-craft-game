@@ -4,7 +4,6 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
-using static Codice.Client.Commands.WkTree.WorkspaceTreeNode;
 
 public class CraftingDevWindow : EditorWindow
 {

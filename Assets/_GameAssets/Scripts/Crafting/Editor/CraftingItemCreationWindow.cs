@@ -1,19 +1,22 @@
-using Crafting;
 using System.Collections.Generic;
-using System.Linq.Expressions;
-using Unity.VisualScripting;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Unity.GraphToolkit;
+using Unity.GraphToolkit.Editor;
+using UnityEditor.Graphs;
 
 public class CraftingItemCreationWindow : EditorWindow
 {
     private ObjectField itemDatabaseField;
     private CraftingItemDatabase itemDatabase;
-    private VisualElement graphRoot;
-    private Button checkForLoopsButton;
+    private ScrollView graphRoot;
     private ScrollView tierListScrollView;
+
+    //TODO: allow user to specify paths
+    private const string newDatabasePath = "Assets/_GameAssets/Data/"; 
+    private const string newItemPath = "Assets/_GameAssets/Data/CraftingItems/"; 
 
     [MenuItem("Window/Crafting/Crafting Item Editor")]
     public static void CreateWindow()
@@ -32,16 +35,27 @@ public class CraftingItemCreationWindow : EditorWindow
             evt => OnItemDatabaseChanged((CraftingItemDatabase)evt.newValue));
         rootVisualElement.Add(itemDatabaseField);
 
-        checkForLoopsButton = new Button();
+        graphRoot = new ScrollView();
+        rootVisualElement.Add(graphRoot);
+
+        rootVisualElement.Add(GetCreateItemUI());
+
+        var newItemDBName = new TextField("New item database name: Assets/_GameAssets/Data/");
+        rootVisualElement.Add(newItemDBName);
+
+        var newItemDBButton = new Button();
+        newItemDBButton.text = "Create new item database";
+        newItemDBButton.clicked += () => CreateNewGraph(newDatabasePath, newItemDBName.text);
+        //newItemDBButton.clicked += () => SaveScriptableObjectAsset(CreateInstance<CraftingItemDatabase>(), newDatabasePath, newItemDBName.text);
+        rootVisualElement.Add(newItemDBButton);
+
+        var checkForLoopsButton = new Button();
         checkForLoopsButton.text = "Check for prerequisite loops";
         checkForLoopsButton.clicked += () => CheckAllForPrerequisiteLoops((CraftingItemDatabase)itemDatabaseField.value);
         rootVisualElement.Add(checkForLoopsButton);
 
         tierListScrollView = new ScrollView();
         rootVisualElement.Add(tierListScrollView);
-
-        graphRoot = new VisualElement();
-        rootVisualElement.Add(graphRoot);
     }
 
     private void OnItemDatabaseChanged(CraftingItemDatabase database)
@@ -53,7 +67,8 @@ public class CraftingItemCreationWindow : EditorWindow
 
         itemDatabase = database;
 
-        CreateGraph(itemDatabase);
+        UpdateTierGraph(itemDatabase);
+
         var itemsSortedByTier = new List<CraftingItemData>(database.ItemList);
         itemsSortedByTier.Sort((a, b) => a.Tier.CompareTo(b.Tier));
         foreach(var itemData in itemsSortedByTier)
@@ -63,9 +78,37 @@ public class CraftingItemCreationWindow : EditorWindow
         }
     }
 
-    private VisualElement CreateGraph(CraftingItemDatabase itemDatabase)
+    private VisualElement UpdateTierGraph(CraftingItemDatabase itemDatabase)
     {
         itemDatabase.UpdateItemTiers();
+
+        var rows = new List<VisualElement>();
+        foreach(var itemData in itemDatabase.ItemList)
+        {
+            if(!itemData)
+            {
+                continue;
+            }
+
+            //add extra rows to match item tier if necessary
+            while(rows.Count <= itemData.Tier)
+            {
+                var row = new VisualElement();
+                row.style.flexDirection = FlexDirection.Row;
+                row.style.paddingTop = 10;
+                rows.Add(row);
+            }
+
+            var itemField = new ItemTierGraphNode(itemData);
+            rows[itemData.Tier].Add(itemField);
+        }
+
+        graphRoot.Clear();
+        foreach (var row in rows)
+        {
+            graphRoot.Add(row);
+        }
+
         return null;
     }
 
@@ -81,6 +124,50 @@ public class CraftingItemCreationWindow : EditorWindow
             itemData.CheckForPrerequisiteLoops();
         }
     }
+
+    private VisualElement GetCreateItemUI()
+    {
+        var itemData = CraftingItemData.CreateInstance<CraftingItemData>();
+        var idSO = new SerializedObject(itemData);
+
+        var rootElement = new Box();
+
+        var header = new Label("Create new item");
+        rootElement.Add(header);
+
+        var itemNameField = new PropertyField();
+        rootElement.Add(itemNameField);
+        itemNameField.bindingPath = "itemName";
+        itemNameField.Bind(idSO);
+
+        var imageField = new PropertyField();
+        rootElement.Add(imageField);
+        imageField.bindingPath = "thumbnailTex";
+        imageField.Bind(idSO);
+
+        var prereqField = new PropertyField();
+        rootElement.Add(prereqField);
+        prereqField.bindingPath = "prerequisites";
+        prereqField.Bind(idSO);
+
+        var extraProductField = new PropertyField();
+        rootElement.Add(extraProductField);
+        extraProductField.bindingPath = "products";
+        extraProductField.Bind(idSO);
+        extraProductField.label = "Extra products on craft";
+
+        var createItemButton = new Button();
+        rootElement.Add(createItemButton);
+        createItemButton.text = "Create";
+        createItemButton.clicked += () =>
+        {
+            idSO.ApplyModifiedProperties();
+            SaveScriptableObjectAsset(itemData, newItemPath, "CraftData_" + idSO.FindProperty("itemName").stringValue);
+        };
+
+        return rootElement;
+    }
+
 
     private bool HasPrerequisiteLoop(List<CraftingItemData> itemList)
     {
@@ -141,5 +228,29 @@ public class CraftingItemCreationWindow : EditorWindow
         root.Add(label);
 
         return root;
+    }
+
+    private void CreateNewGraph(string path, string assetName)
+    {
+        var fileExtensionIdx = assetName.IndexOf('.');
+        if(fileExtensionIdx > 0)
+        {
+            assetName = assetName.Substring(0, fileExtensionIdx);
+        }
+
+        assetName += "." + CraftingItemDatabaseGraph.AssetExtension;
+
+        Unity.GraphToolkit.Editor.GraphDatabase.CreateGraph<CraftingItemDatabaseGraph>(newDatabasePath + assetName);
+    }
+
+    private void SaveScriptableObjectAsset<T>(T obj, string path, string assetName) where T : ScriptableObject
+    {
+        if (!assetName.EndsWith(".asset"))
+        {
+            assetName += ".asset";
+        }
+
+        AssetDatabase.CreateAsset(obj, path + assetName);
+        AssetDatabase.SaveAssets();
     }
 }

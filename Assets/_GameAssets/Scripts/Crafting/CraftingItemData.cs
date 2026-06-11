@@ -65,6 +65,11 @@ public class CraftingItemData : ScriptableObject
 
         bool NodeHasLoop(CraftingItemData itemData)
         {
+            if(!itemData)
+            {
+                return false;
+            }
+
             //node already visited - loop detected!
             if (recursion.Contains(itemData))
             {

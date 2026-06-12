@@ -7,6 +7,8 @@ public class IntroSeqCraftingItem : MonoBehaviour, ICursorEventListener
     [SerializeField] private IntroSequence introSequence;
     [SerializeField] private FadeInOutText onHoverText;
 
+    public CraftingItem Item => item;
+
     private bool isHovered;
 
     private void OnEnable()

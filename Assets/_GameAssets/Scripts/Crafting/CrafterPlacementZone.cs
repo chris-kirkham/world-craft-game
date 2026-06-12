@@ -175,7 +175,7 @@ public class CrafterPlacementZone : DraggablePlacementPoint, ICursorEventListene
     {
         if(currentItem && currentItem == obj)
         {
-            SetState(State.Empty);
+            SetState(State.PlacementPreview);
         }
         else
         {

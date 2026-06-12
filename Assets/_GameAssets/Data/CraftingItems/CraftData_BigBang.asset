@@ -16,8 +16,5 @@ MonoBehaviour:
   craftingAliases: []
   thumbnailTex: {fileID: 0}
   contentPrefab: {fileID: 0}
-  prerequisites:
-  - {fileID: 11400000, guid: a5ecc6b4dca2d814fb3b56f35b0be370, type: 2}
-  - {fileID: 11400000, guid: 447e815deba235b44b2604f425d83cd7, type: 2}
-  products:
-  - {fileID: 11400000, guid: a5ecc6b4dca2d814fb3b56f35b0be370, type: 2}
+  prerequisites: []
+  products: []

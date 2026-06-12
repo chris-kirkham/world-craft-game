@@ -18,7 +18,6 @@ MonoBehaviour:
   thumbnailTex: {fileID: 2800000, guid: 48f9d16d52062584eb8f24876ec43140, type: 3}
   contentPrefab: {fileID: 0}
   prerequisites:
-  - {fileID: 11400000, guid: 299c2723918579e43af015a05132e2e1, type: 2}
-  - {fileID: 11400000, guid: a5ecc6b4dca2d814fb3b56f35b0be370, type: 2}
-  products:
-  - {fileID: 11400000, guid: 299c2723918579e43af015a05132e2e1, type: 2}
+  - {fileID: 11400000, guid: 3b565ecf318ced34082dc1671c8ac79e, type: 2}
+  - {fileID: 11400000, guid: 3b565ecf318ced34082dc1671c8ac79e, type: 2}
+  products: []

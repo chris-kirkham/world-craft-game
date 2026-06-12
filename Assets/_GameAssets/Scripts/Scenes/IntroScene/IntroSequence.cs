@@ -120,7 +120,8 @@ public class IntroSequence : MonoBehaviour
                     .WaitForCompletion();
 
                 //spawn chosen item at same position and rotation so it looks seamless (hopefully!)
-                var spawnedItem = CraftingManager.Inst.SpawnItem(chosenItemData, startingItemTform.position, startingItemTform.rotation);
+                //var spawnedItem = CraftingManager.Inst.SpawnItem(chosenItemData, startingItemTform.position, startingItemTform.rotation);
+                var spawnedItem = CraftingManager.Inst.SpawnItem(startingItem.Item.Data, startingItemTform.position, startingItemTform.rotation); //TEST: one of each starter
                 spawnedItem.SetState(CraftingItem.State.Animatable);
                 spawnedItems.Add(spawnedItem);    
 

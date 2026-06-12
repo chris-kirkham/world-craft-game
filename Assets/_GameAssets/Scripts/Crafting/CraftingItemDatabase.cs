@@ -9,15 +9,9 @@ public class CraftingItemDatabase : ScriptableObject
     //list of all craftable items
     [SerializeField] private List<CraftingItemData> itemList;
 
-    public List<int> ItemTiers { get; private set; }
-
     public List<CraftingItemData> ItemList => itemList;
 
-    private void OnValidate()
-    {
-        UpdateItemTiers();
-    }
-
+    [ContextMenu("Update Item Tiers")]
     public void UpdateItemTiers()
     {
         var uncheckedItems = new List<CraftingItemData>(ItemList);
@@ -64,9 +58,9 @@ public class CraftingItemDatabase : ScriptableObject
                 if (allPrereqsInPrevTier)
                 {
                     itemData.Tier = tier;
+                    Debug.Log($"{itemData.ItemName} is tier {tier}");
                     checkedItems.Add(itemData);
                     uncheckedItems.RemoveAt(i);
-                    Debug.Log($"{itemData.name} is tier {tier}");
                 }
             }
 

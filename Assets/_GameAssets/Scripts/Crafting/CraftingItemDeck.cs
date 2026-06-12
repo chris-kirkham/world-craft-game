@@ -17,6 +17,9 @@ namespace Crafting
         [SerializeField] private float itemZOffset = 0.05f;
         [SerializeField] private bool populateOnEnable;
         [SerializeField] private bool singleItemType = true;
+        //allow any item type to be placed when the deck is empty, even if it's a single-item-type deck.
+        //If it is and this is false, the deck's ItemType must be set in code in order to place an item on an empty deck
+        [SerializeField] private bool allowAnyItemTypeWhenEmpty = false; 
         [SerializeField] private float animateItemToDeckTime = 0.4f;
         [Header("VFX")]
         [SerializeField] private FadeInOut onHoverPreviewVFX;
@@ -25,6 +28,8 @@ namespace Crafting
 
         private Cursor cursor;
 
+        public CraftingItemData ItemType { get; set; }
+    
         public event Action<CraftingItem> OnItemPlaced;
         public event Action<CraftingItem> OnItemRemoved;
 
@@ -185,14 +190,13 @@ namespace Crafting
                 return false;
             }
 
-            if(IsEmpty() || !singleItemType)
+            if(!singleItemType || (IsEmpty() && allowAnyItemTypeWhenEmpty))
             {
                 return true;
             }
             else
             {
-                var itemData = ((CraftingItem)obj).Data;
-                return itemData == PeekTopItem().Data;
+                return ((CraftingItem)obj).Data == ItemType;
             }
         }
 
@@ -200,7 +204,12 @@ namespace Crafting
         {
             if(obj is CraftingItem)
             {
-                AddItemToTopDeck((CraftingItem)obj);
+                var item = (CraftingItem)obj;
+                if (singleItemType)
+                {
+                    ItemType = item.Data;
+                }
+                AddItemToTopDeck(item);
             }
             else
             {

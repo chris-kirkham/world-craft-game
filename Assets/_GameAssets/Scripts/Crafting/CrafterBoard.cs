@@ -97,13 +97,14 @@ namespace Crafting
 
         void PlaceItemInBoardDeck(CraftingItem item, CraftingItemDeck deck)
         {
+            if(deck.IsEmpty())
+            {
+                deck.ItemType = item.Data;
+            }
+
             if (deck.TryPlaceObject(item))
             {
                 AddToActiveItems(item);
-            }
-            else
-            {
-                Debug.LogError($"Tried to add item {item.Data} to grid, but it failed!");
             }
         }
 

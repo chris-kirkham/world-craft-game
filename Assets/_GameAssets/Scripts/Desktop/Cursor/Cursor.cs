@@ -317,7 +317,7 @@ public class Cursor : SingletonMonoBehaviour<Cursor>
         listenersToRemove.Clear();
     }
 
-    public void SetAllowInput(bool allowInput, bool alsoShowHideCursor = true)
+    public void SetAllowInput(bool allowInput, bool alsoShowHideCursor = false)
     {
         inputEnabled = allowInput;
         if(alsoShowHideCursor)

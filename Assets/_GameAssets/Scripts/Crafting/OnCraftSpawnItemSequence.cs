@@ -42,6 +42,12 @@ namespace Crafting
 
         private IEnumerator SpawnItem(CraftingItemData item)
         {
+            if(!item)
+            {
+                Debug.LogError($"Tried to spawn null item!");
+                yield break;
+            }
+
             Debug.Log($"Successfully crafted {item.ItemName} from ingredients " + string.Join(", ", Ingredients) + "!");
             
             var craftingManager = CraftingManager.Inst;
@@ -64,6 +70,12 @@ namespace Crafting
             {
                 foreach (var extraProduct in item.ExtraProducts)
                 {
+                    if(!extraProduct)
+                    {
+                        Debug.LogError($"Extra product of item {item.ItemName} is null!");
+                        continue;
+                    }
+
                     if(GameplaySettings.InfiniteDecks && craftingManager.WasItemCraftedPreviously(extraProduct))
                     {
                         //if we're using infinite decks, don't spawn extra product if it's already on the board
